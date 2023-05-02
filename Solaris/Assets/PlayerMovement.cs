@@ -86,7 +86,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
-        rb = GetComponent<Rigidbody>(); // Získání Rigidbody hráče
+        rb = GetComponentInParent<Rigidbody>(); // Získání Rigidbody hráče
         rb.freezeRotation = true; // Zamrznutí rotace hráče
 
         readyToJump = true; // Hráč je připraven skočit

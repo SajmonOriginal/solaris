@@ -36,7 +36,7 @@ public class Sliding : MonoBehaviour
     // Metoda Start se volá při inicializaci objektu
     private void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        rb = GetComponentInParent<Rigidbody>();
         pm = GetComponent<PlayerMovement>();
 
         startYScale = playerObj.localScale.y;
