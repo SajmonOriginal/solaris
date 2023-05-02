@@ -5,57 +5,75 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    private float moveSpeed;
-    public float walkSpeed;
-    public float sprintSpeed;
-    public float slideSpeed;
+    private float moveSpeed; // Aktuální rychlost pohybu hráče
 
-    private float desiredMoveSpeed;
-    private float lastDesiredMoveSpeed;
+    public float walkSpeed; // Rychlost chůze
 
-    public float speedIncreaseMultiplier;
-    public float slopeIncreaseMultiplier;
+    public float sprintSpeed; // Rychlost sprintu
 
-    public float groundDrag;
+    public float slideSpeed; // Rychlost skluzu
+
+    private float desiredMoveSpeed; // Požadovaná rychlost pohybu hráče
+
+    private float lastDesiredMoveSpeed; // Poslední požadovaná rychlost pohybu hráče
+
+    public float speedIncreaseMultiplier; // Násobitel zvýšení rychlosti
+
+    public float slopeIncreaseMultiplier; // Násobitel zvýšení rychlosti na svahu
+
+    public float groundDrag; // Tření při pohybu po zemi
 
     [Header("Jumping")]
-    public float jumpForce;
-    public float jumpCooldown;
-    public float airMultiplier;
-    bool readyToJump;
+    public float jumpForce; // Síla skoku
+
+    public float jumpCooldown; // Prodleva mezi skoky
+
+    public float airMultiplier; // Násobitel pohybu ve vzduchu
+
+    bool readyToJump; // Připravenost ke skoku
 
     [Header("Crouching")]
-    public float crouchSpeed;
-    public float crouchYScale;
-    private float startYScale;
+    public float crouchSpeed; // Rychlost při dřepu
+
+    public float crouchYScale; // Měřítko hráče při dřepu
+
+    private float startYScale; // Původní měřítko hráče
 
     [Header("Keybinds")]
-    public KeyCode jumpKey = KeyCode.Space;
-    public KeyCode sprintKey = KeyCode.LeftShift;
-    public KeyCode crouchKey = KeyCode.LeftControl;
+    public KeyCode jumpKey = KeyCode.Space; // Klávesa pro skok
+
+    public KeyCode sprintKey = KeyCode.LeftShift; // Klávesa pro sprint
+
+    public KeyCode crouchKey = KeyCode.LeftControl; // Klávesa pro dřep
 
     [Header("Ground Check")]
-    public float playerHeight;
-    public LayerMask whatIsGround;
-    bool grounded;
+    public float playerHeight; // Výška hráče
+
+    public LayerMask whatIsGround; // Co je považováno za zemi
+
+    bool grounded; // Je hráč na zemi?
 
     [Header("Slope Handling")]
-    public float maxSlopeAngle;
-    private RaycastHit slopeHit;
-    private bool exitingSlope;
-    
+    public float maxSlopeAngle; // Maximální úhel svahu, na kterém může hráč stát
 
-    public Transform orientation;
+    private RaycastHit slopeHit; // Informace o objektu svahu
 
-    float horizontalInput;
-    float verticalInput;
+    private bool exitingSlope; // Opouštění svahu
 
-    Vector3 moveDirection;
+    public Transform orientation; // Směr pohybu hráče
 
-    Rigidbody rb;
+    float horizontalInput; // Horizontální vstup
 
-    public MovementState state;
-    public enum MovementState
+    float verticalInput; // Vertikální vstup
+
+    Vector3 moveDirection; // Směr pohybu hráče
+
+    Rigidbody rb; // Rigidbody hráče
+
+    public MovementState state; // Stav pohybu hráče
+
+    public enum
+    MovementState // Výčet stavů pohybu hráče
     {
         walking,
         sprinting,
@@ -64,28 +82,33 @@ public class PlayerMovement : MonoBehaviour
         air
     }
 
-    public bool sliding;
+    public bool sliding; // Je hráč ve skluzu?
 
     private void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true;
+        rb = GetComponent<Rigidbody>(); // Získání Rigidbody hráče
+        rb.freezeRotation = true; // Zamrznutí rotace hráče
 
-        readyToJump = true;
+        readyToJump = true; // Hráč je připraven skočit
 
-        startYScale = transform.localScale.y;
+        startYScale = transform.localScale.y; // Uložení původního měřítka hráče
     }
 
     private void Update()
     {
-        // ground check
-        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
+        // Kontrola země
+        grounded =
+            Physics
+                .Raycast(transform.position,
+                Vector3.down,
+                playerHeight * 0.5f + 0.2f,
+                whatIsGround);
 
-        MyInput();
-        SpeedControl();
-        StateHandler();
+        MyInput(); // Zpracování vstupů
+        SpeedControl(); // Řízení rychlosti
+        StateHandler(); // Řízení stavu pohybu hráče
 
-        // handle drag
+        // Nastavení tření
         if (grounded)
             rb.drag = groundDrag;
         else
@@ -94,84 +117,85 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        MovePlayer();
+        MovePlayer(); // Pohyb hráče
     }
 
     private void MyInput()
     {
-        horizontalInput = Input.GetAxisRaw("Horizontal");
-        verticalInput = Input.GetAxisRaw("Vertical");
+        horizontalInput = Input.GetAxisRaw("Horizontal"); // Získání horizontálního vstupu
+        verticalInput = Input.GetAxisRaw("Vertical"); // Získání vertikálního vstupu
 
-        // when to jump
-        if(Input.GetKey(jumpKey) && readyToJump && grounded)
+        // Kdy skákat
+        if (Input.GetKey(jumpKey) && readyToJump && grounded)
         {
             readyToJump = false;
 
-            Jump();
+            Jump(); // Skok
 
-            Invoke(nameof(ResetJump), jumpCooldown);
+            Invoke(nameof(ResetJump), jumpCooldown); // Resetování skoku
         }
 
-        // start crouch
+        // Začátek dřepu
         if (Input.GetKeyDown(crouchKey))
         {
-            transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
+            transform.localScale =
+                new Vector3(transform.localScale.x,
+                    crouchYScale,
+                    transform.localScale.z);
             rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
         }
 
-        // stop crouch
+        // Konec dřepu
         if (Input.GetKeyUp(crouchKey))
         {
-            transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
+            transform.localScale =
+                new Vector3(transform.localScale.x,
+                    startYScale,
+                    transform.localScale.z);
         }
     }
 
     private void StateHandler()
     {
-        // Mode - Sliding
+        // Mód - Skluz
         if (sliding)
         {
             state = MovementState.sliding;
 
             if (OnSlope() && rb.velocity.y < 0.1f)
                 desiredMoveSpeed = slideSpeed;
-
             else
                 desiredMoveSpeed = sprintSpeed;
-        }
-
-        // Mode - Crouching
+        } // Mód - Dřep
         else if (Input.GetKey(crouchKey))
         {
             state = MovementState.crouching;
             desiredMoveSpeed = crouchSpeed;
-        }
-
-        // Mode - Sprinting
-        else if(grounded && Input.GetKey(sprintKey))
+        } // Mód - Sprint
+        else if (grounded && Input.GetKey(sprintKey))
         {
             state = MovementState.sprinting;
             desiredMoveSpeed = sprintSpeed;
-        }
-
-        // Mode - Walking
+        } // Mód - Chůze
         else if (grounded)
         {
             state = MovementState.walking;
             desiredMoveSpeed = walkSpeed;
         }
-
-        // Mode - Air
         else
+        // Mód - Ve vzduchu
         {
             state = MovementState.air;
         }
 
-        // check if desiredMoveSpeed has changed drastically
-        if(Mathf.Abs(desiredMoveSpeed - lastDesiredMoveSpeed) > 4f && moveSpeed != 0)
+        // Kontrola, zda se desiredMoveSpeed výrazně změnila
+        if (
+            Mathf.Abs(desiredMoveSpeed - lastDesiredMoveSpeed) > 4f &&
+            moveSpeed != 0
+        )
         {
             StopAllCoroutines();
-            StartCoroutine(SmoothlyLerpMoveSpeed());
+            StartCoroutine(SmoothlyLerpMoveSpeed()); // Plynulé změny rychlosti
         }
         else
         {
@@ -183,21 +207,26 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator SmoothlyLerpMoveSpeed()
     {
-        // smoothly lerp movementSpeed to desired value
+        // Plynulé přechody mezi rychlostmi pohybu
         float time = 0;
         float difference = Mathf.Abs(desiredMoveSpeed - moveSpeed);
         float startValue = moveSpeed;
 
         while (time < difference)
         {
-            moveSpeed = Mathf.Lerp(startValue, desiredMoveSpeed, time / difference);
+            moveSpeed =
+                Mathf.Lerp(startValue, desiredMoveSpeed, time / difference);
 
             if (OnSlope())
             {
                 float slopeAngle = Vector3.Angle(Vector3.up, slopeHit.normal);
                 float slopeAngleIncrease = 1 + (slopeAngle / 90f);
 
-                time += Time.deltaTime * speedIncreaseMultiplier * slopeIncreaseMultiplier * slopeAngleIncrease;
+                time +=
+                    Time.deltaTime *
+                    speedIncreaseMultiplier *
+                    slopeIncreaseMultiplier *
+                    slopeAngleIncrease;
             }
             else
                 time += Time.deltaTime * speedIncreaseMultiplier;
@@ -210,49 +239,60 @@ public class PlayerMovement : MonoBehaviour
 
     private void MovePlayer()
     {
-        // calculate movement direction
-        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        // Výpočet směru pohybu
+        moveDirection =
+            orientation.forward * verticalInput +
+            orientation.right * horizontalInput;
 
-        // on slope
+        // Na svahu
         if (OnSlope() && !exitingSlope)
         {
-            rb.AddForce(GetSlopeMoveDirection(moveDirection) * moveSpeed * 20f, ForceMode.Force);
+            rb
+                .AddForce(GetSlopeMoveDirection(moveDirection) *
+                moveSpeed *
+                20f,
+                ForceMode.Force);
 
             if (rb.velocity.y > 0)
                 rb.AddForce(Vector3.down * 80f, ForceMode.Force);
         }
+        else // Na zemi
+        if (grounded)
+            rb
+                .AddForce(moveDirection.normalized * moveSpeed * 10f,
+                ForceMode.Force);
+        else // Ve vzduchu
+        if (!grounded)
+            rb
+                .AddForce(moveDirection.normalized *
+                moveSpeed *
+                10f *
+                airMultiplier,
+                ForceMode.Force);
 
-        // on ground
-        else if(grounded)
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
-
-        // in air
-        else if(!grounded)
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
-
-        // turn gravity off while on slope
+        // Vypnutí gravitace na svahu
         rb.useGravity = !OnSlope();
     }
 
     private void SpeedControl()
     {
-        // limiting speed on slope
+        // Omezení rychlosti na svahu
         if (OnSlope() && !exitingSlope)
         {
             if (rb.velocity.magnitude > moveSpeed)
                 rb.velocity = rb.velocity.normalized * moveSpeed;
         }
-
-        // limiting speed on ground or in air
         else
+        // Omezení rychlosti na zemi nebo ve vzduchu
         {
             Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
-            // limit velocity if needed
+            // Omezení rychlosti, pokud je to nutné
             if (flatVel.magnitude > moveSpeed)
             {
                 Vector3 limitedVel = flatVel.normalized * moveSpeed;
-                rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
+                rb.velocity =
+                    new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
             }
         }
     }
@@ -261,21 +301,28 @@ public class PlayerMovement : MonoBehaviour
     {
         exitingSlope = true;
 
-        // reset y velocity
+        // Resetování rychlosti ve směru osy Y
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
-        rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
+        rb.AddForce(transform.up * jumpForce, ForceMode.Impulse); // Přidání síly pro skok
     }
+
     private void ResetJump()
     {
-        readyToJump = true;
+        readyToJump = true; // Hráč je připraven skočit
 
         exitingSlope = false;
     }
 
     public bool OnSlope()
     {
-        if(Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f + 0.3f))
+        if (
+            Physics
+                .Raycast(transform.position,
+                Vector3.down,
+                out slopeHit,
+                playerHeight * 0.5f + 0.3f)
+        )
         {
             float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
             return angle < maxSlopeAngle && angle != 0;
@@ -286,6 +333,7 @@ public class PlayerMovement : MonoBehaviour
 
     public Vector3 GetSlopeMoveDirection(Vector3 direction)
     {
+        // Výpočet směru pohybu na svahu
         return Vector3.ProjectOnPlane(direction, slopeHit.normal).normalized;
     }
 }
