@@ -13,6 +13,8 @@ public class PlayerMovement : MonoBehaviour
 
     public float slideSpeed; // Rychlost skluzu
 
+    public float climbSpeed;
+
     private float desiredMoveSpeed; // Požadovaná rychlost pohybu hráče
 
     private float lastDesiredMoveSpeed; // Poslední požadovaná rychlost pohybu hráče
@@ -78,11 +80,13 @@ public class PlayerMovement : MonoBehaviour
         walking,
         sprinting,
         crouching,
+        climbing,
         sliding,
         air
     }
 
     public bool sliding; // Je hráč ve skluzu?
+    public bool climbing;
 
     private void Start()
     {
@@ -157,8 +161,16 @@ public class PlayerMovement : MonoBehaviour
 
     private void StateHandler()
     {
+        // Mód - Šplhání
+        if (climbing)
+    {
+        state = MovementState.climbing;
+        desiredMoveSpeed = climbSpeed; 
+    }
+
+
         // Mód - Skluz
-        if (sliding)
+        else if (sliding)
         {
             state = MovementState.sliding;
 
