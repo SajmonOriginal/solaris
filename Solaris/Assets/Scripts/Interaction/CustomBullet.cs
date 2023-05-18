@@ -1,18 +1,11 @@
 using UnityEngine;
 
-/// Thanks for downloading my custom bullets/projectiles script! :D
-/// Feel free to use it in any project you like!
-/// 
-/// The code is fully commented but if you still have any questions
-/// don't hesitate to write a yt comment
-/// or use the #coding-problems channel of my discord server
-/// 
-/// Dave
 public class CustomBullet : MonoBehaviour
 {
     //Assignables
     public Rigidbody rb;
     public GameObject explosion;
+    public GameObject hitEffectPrefab; // Particle System
     public LayerMask whatIsEnemy;
 
     //Stats
@@ -48,44 +41,48 @@ public class CustomBullet : MonoBehaviour
         if (maxLifetime <= 0) Explode();
     }
 
-    private void Explode()
+private void Explode()
+{
+    //Instantiate explosion
+    if (explosion != null) Instantiate(explosion, transform.position, Quaternion.identity);
+
+    //Check for enemies 
+    Collider[] enemies = Physics.OverlapSphere(transform.position, explosionRange, whatIsEnemy);
+    for (int i = 0; i < enemies.Length; i++)
     {
-        //Instantiate explosion
-        if (explosion != null) Instantiate(explosion, transform.position, Quaternion.identity);
+        //Get component of enemy and call Take Damage
+        ///enemies[i].GetComponent<ShootingAi>().TakeDamage(explosionDamage);
 
-        //Check for enemies 
-        Collider[] enemies = Physics.OverlapSphere(transform.position, explosionRange, whatIsEnemy);
-        for (int i = 0; i < enemies.Length; i++)
-        {
-            //Get component of enemy and call Take Damage
-
-            //Just an example!
-            ///enemies[i].GetComponent<ShootingAi>().TakeDamage(explosionDamage);
-
-            //Add explosion force (if enemy has a rigidbody)
-            if (enemies[i].GetComponent<Rigidbody>())
-                enemies[i].GetComponent<Rigidbody>().AddExplosionForce(explosionForce, transform.position, explosionRange);
-        }
-
-        //Add a little delay, just to make sure everything works fine
-        Invoke("Delay", 0.05f);
-    }
-    private void Delay()
-    {
-        Destroy(gameObject);
+        //Add explosion force (if enemy has a rigidbody)
+        if (enemies[i].GetComponent<Rigidbody>())
+            enemies[i].GetComponent<Rigidbody>().AddExplosionForce(explosionForce, transform.position, explosionRange);
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        //Don't count collisions with other bullets
-        if (collision.collider.CompareTag("whatIsBullet")) return;
+    // Destroy the object immediately without delay
+    Destroy(gameObject);
+}
 
-        //Count up collisions
-        collisions++;
+private void OnCollisionEnter(Collision collision)
+{
+    //Don't count collisions with other bullets
+    if (collision.collider.CompareTag("whatIsBullet")) return;
 
-        //Explode if bullet hits an enemy directly and explodeOnTouch is activated
-        if (collision.collider.CompareTag("whatIsEnemy") && explodeOnTouch) Explode();
-    }
+    //Count up collisions
+    collisions++;
+
+    //Explode if bullet hits an enemy directly and explodeOnTouch is activated
+    if (collision.collider.CompareTag("whatIsEnemy") && explodeOnTouch) Explode();
+
+    // Instantiate the particle effect at the collision point
+    GameObject hitEffect = Instantiate(hitEffectPrefab, collision.contacts[0].point, Quaternion.identity);
+
+    // Explode (and therefore destroy) the bullet immediately
+    Explode();
+
+    // Optionally, destroy the hit effect after some time
+    Destroy(hitEffect, 1f); // destroy after 1 second
+}
+
 
     private void Setup()
     {

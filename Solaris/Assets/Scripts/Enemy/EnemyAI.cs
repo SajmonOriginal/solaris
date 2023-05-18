@@ -1,12 +1,13 @@
-
 using UnityEngine;
 using UnityEngine.AI;
+
 public class EnemyAI : MonoBehaviour
 {
     public NavMeshAgent agent;
 
     public Transform player;
     public GameObject gun;
+    public Transform attackPoint; // Nová proměnná AttackPoint
 
     //Stats
     public int health;
@@ -37,6 +38,7 @@ public class EnemyAI : MonoBehaviour
         player = GameObject.Find("PlayerObj").transform;
         agent = GetComponent<NavMeshAgent>();
     }
+
     private void Update()
     {
         if (!isDead)
@@ -60,11 +62,9 @@ public class EnemyAI : MonoBehaviour
         if (!walkPointSet) SearchWalkPoint();
 
         //Calculate direction and walk to Point
-        if (walkPointSet){
+        if (walkPointSet)
+        {
             agent.SetDestination(walkPoint);
-
-            //Vector3 direction = walkPoint - transform.position;
-            //transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), 0.15f);
         }
 
         //Calculates DistanceToWalkPoint
@@ -76,6 +76,7 @@ public class EnemyAI : MonoBehaviour
 
         GetComponent<MeshRenderer>().material = green;
     }
+
     private void SearchWalkPoint()
     {
         float randomZ = Random.Range(-walkPointRange, walkPointRange);
@@ -83,9 +84,10 @@ public class EnemyAI : MonoBehaviour
 
         walkPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z + randomZ);
 
-        if (Physics.Raycast(walkPoint,-transform.up, 2,whatIsGround))
-        walkPointSet = true;
+        if (Physics.Raycast(walkPoint, -transform.up, 2, whatIsGround))
+            walkPointSet = true;
     }
+
     private void ChasePlayer()
     {
         if (isDead) return;
@@ -94,6 +96,7 @@ public class EnemyAI : MonoBehaviour
 
         GetComponent<MeshRenderer>().material = yellow;
     }
+
     private void AttackPlayer()
     {
         if (isDead) return;
@@ -103,13 +106,13 @@ public class EnemyAI : MonoBehaviour
 
         transform.LookAt(player);
 
-        if (!alreadyAttacked){
-
+        if (!alreadyAttacked)
+        {
             //Attack
-            Rigidbody rb = Instantiate(projectile, transform.position, Quaternion.identity).GetComponent<Rigidbody>();
+            Rigidbody rb = Instantiate(projectile, attackPoint.position, Quaternion.identity).GetComponent<Rigidbody>();
 
             rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
-            rb.AddForce(transform.up * 8, ForceMode.Impulse);
+            // rb.AddForce(transform.up * 8, ForceMode.Impulse);
 
             alreadyAttacked = true;
             Invoke("ResetAttack", timeBetweenAttacks);
@@ -117,21 +120,25 @@ public class EnemyAI : MonoBehaviour
 
         GetComponent<MeshRenderer>().material = red;
     }
+
     private void ResetAttack()
     {
         if (isDead) return;
 
         alreadyAttacked = false;
     }
+
     public void TakeDamage(int damage)
     {
         health -= damage;
 
-        if (health < 0){
+        if (health < 0)
+        {
             isDead = true;
             Invoke("Destroyy", 2.8f);
         }
     }
+
     private void Destroyy()
     {
         Destroy(gameObject);
