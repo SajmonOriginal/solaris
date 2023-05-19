@@ -9,9 +9,6 @@ public class EnemyAI : MonoBehaviour
     public GameObject gun;
     public Transform attackPoint; // Nová proměnná AttackPoint
 
-    //Stats
-    public int health;
-
     //Check for Ground/Obstacles
     public LayerMask whatIsGround, whatIsPlayer;
 
@@ -25,7 +22,6 @@ public class EnemyAI : MonoBehaviour
     bool alreadyAttacked;
 
     //States
-    public bool isDead;
     public float sightRange, attackRange;
     public bool playerInSightRange, playerInAttackRange;
 
@@ -41,24 +37,19 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
-        if (!isDead)
-        {
-            //Check if Player in sightrange
-            playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
+        //Check if Player in sightrange
+        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
 
-            //Check if Player in attackrange
-            playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
+        //Check if Player in attackrange
+        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
 
-            if (!playerInSightRange && !playerInAttackRange) Patroling();
-            if (playerInSightRange && !playerInAttackRange) ChasePlayer();
-            if (playerInAttackRange && playerInSightRange) AttackPlayer();
-        }
+        if (!playerInSightRange && !playerInAttackRange) Patroling();
+        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
+        if (playerInAttackRange && playerInSightRange) AttackPlayer();
     }
 
     private void Patroling()
     {
-        if (isDead) return;
-
         if (!walkPointSet) SearchWalkPoint();
 
         //Calculate direction and walk to Point
@@ -90,8 +81,6 @@ public class EnemyAI : MonoBehaviour
 
     private void ChasePlayer()
     {
-        if (isDead) return;
-
         agent.SetDestination(player.position);
 
         GetComponent<MeshRenderer>().material = yellow;
@@ -99,8 +88,6 @@ public class EnemyAI : MonoBehaviour
 
     private void AttackPlayer()
     {
-        if (isDead) return;
-
         //Make sure enemy doesn't move
         agent.SetDestination(transform.position);
 
@@ -123,25 +110,7 @@ public class EnemyAI : MonoBehaviour
 
     private void ResetAttack()
     {
-        if (isDead) return;
-
         alreadyAttacked = false;
-    }
-
-    public void TakeDamage(int damage)
-    {
-        health -= damage;
-
-        if (health < 0)
-        {
-            isDead = true;
-            Invoke("Destroyy", 2.8f);
-        }
-    }
-
-    private void Destroyy()
-    {
-        Destroy(gameObject);
     }
 
     private void OnDrawGizmosSelected()

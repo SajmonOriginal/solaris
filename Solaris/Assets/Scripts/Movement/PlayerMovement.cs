@@ -288,6 +288,13 @@ public class PlayerMovement : MonoBehaviour
         moveSpeed = desiredMoveSpeed;
     }
 
+        public Vector3 GetMoveDirection()
+    {
+        Vector3 moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        moveDirection.Normalize();
+        return moveDirection;
+    }
+
     private void MovePlayer()
     {
         if (climbingScript.exitingWall) return;

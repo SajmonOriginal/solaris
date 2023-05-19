@@ -70,7 +70,7 @@ public class ProjectileGun : MonoBehaviour
         if (readyToShoot && shooting && !reloading && bulletsLeft <= 0) Reload();
 
         //Shooting
-        if (readyToShoot && shooting && !reloading && bulletsLeft > 0)
+        if (!DragRigidbody.isDragging && readyToShoot && shooting && !reloading && bulletsLeft > 0)
         {
             //Set bullets shot to 0
             bulletsShot = 0;

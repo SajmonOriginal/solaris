@@ -14,41 +14,43 @@ public class PickUpController : MonoBehaviour
     public float pickUpRange, pickUpTime;
     public float dropForwardForce, dropUpwardForce;
 
-    public bool equipped;
+    public bool isEquipped;
     public static bool slotFull;
 
     private int whatIsWeaponLayer;
 
     private void Start()
     {
-        if (!equipped)
+        if (!isEquipped)
         {
             gunScript.enabled = false;
             rb.isKinematic = false;
             coll.isTrigger = false;
+            transform.SetParent(null); // if the weapon is not equipped, we make sure its parent is null
         }
-        if (equipped)
+        if (isEquipped)
         {
             slotFull = true;
             rb.isKinematic = true;
             coll.isTrigger = true;
+            transform.SetParent(gunContainer); // if the weapon is equipped, we make sure its parent is gunContainer
         }
 
         whatIsWeaponLayer = LayerMask.NameToLayer("whatIsWeapon");
-        SetCullingMasks(equipped);
+        SetCullingMasks(isEquipped);
     }
 
     private void Update()
     {
         Vector3 distanceToPlayer = player.position - transform.position;
-        if (!equipped && distanceToPlayer.magnitude <= pickUpRange && Input.GetKeyDown(KeyCode.E) && !slotFull) PickUp();
+        if (!isEquipped && distanceToPlayer.magnitude <= pickUpRange && Input.GetKeyDown(KeyCode.E) && !slotFull) PickUp();
 
-        if (equipped && Input.GetKeyDown(KeyCode.Q)) Drop();
+        if (isEquipped && Input.GetKeyDown(KeyCode.Q)) Drop();
     }
 
     private void PickUp()
     {
-        equipped = true;
+        isEquipped = true;
         slotFull = true;
 
         transform.SetParent(gunContainer);
@@ -66,7 +68,7 @@ public class PickUpController : MonoBehaviour
 
     private void Drop()
     {
-        equipped = false;
+        isEquipped = false;
         slotFull = false;
 
         transform.SetParent(null);
