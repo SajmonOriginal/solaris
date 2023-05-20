@@ -265,7 +265,7 @@ MonoBehaviour:
   hitEffectPrefab: {fileID: 2339867355232806087, guid: 33fe50e5889077242b73ae7ef744f754, type: 3}
   whatIsEnemy:
     serializedVersion: 2
-    m_Bits: 16384
+    m_Bits: 64
   bounciness: 0
   useGravity: 0
   explosionDamage: 0

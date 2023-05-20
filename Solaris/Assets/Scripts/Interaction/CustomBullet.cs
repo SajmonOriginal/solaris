@@ -2,23 +2,19 @@ using UnityEngine;
 
 public class CustomBullet : MonoBehaviour
 {
-    //Assignables
     public Rigidbody rb;
     public GameObject explosion;
-    public GameObject hitEffectPrefab; // Particle System
+    public GameObject hitEffectPrefab;
     public LayerMask whatIsEnemy;
 
-    //Stats
     [Range(0f,1f)]
     public float bounciness;
     public bool useGravity;
 
-    //Damage
     public int explosionDamage;
     public float explosionRange;
     public float explosionForce;
 
-    //Lifetime
     public int maxCollisions;
     public float maxLifetime;
     public bool explodeOnTouch = true;
@@ -33,72 +29,64 @@ public class CustomBullet : MonoBehaviour
 
     private void Update()
     {
-        //When to explode:
         if (collisions > maxCollisions) Explode();
 
-        //Count down lifetime
         maxLifetime -= Time.deltaTime;
         if (maxLifetime <= 0) Explode();
     }
 
-private void Explode()
-{
-    //Instantiate explosion
-    if (explosion != null) Instantiate(explosion, transform.position, Quaternion.identity);
-
-    //Check for enemies 
-    Collider[] enemies = Physics.OverlapSphere(transform.position, explosionRange, whatIsEnemy);
-    for (int i = 0; i < enemies.Length; i++)
+    private void Explode()
     {
-        //Get component of enemy and call Take Damage
-        ///enemies[i].GetComponent<ShootingAi>().TakeDamage(explosionDamage);
+        if (explosion != null) Instantiate(explosion, transform.position, Quaternion.identity);
 
-        //Add explosion force (if enemy has a rigidbody)
-        if (enemies[i].GetComponent<Rigidbody>())
-            enemies[i].GetComponent<Rigidbody>().AddExplosionForce(explosionForce, transform.position, explosionRange);
+        Collider[] enemies = Physics.OverlapSphere(transform.position, explosionRange, whatIsEnemy);
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            enemies[i].GetComponent<EnemyAI>()?.Die();
+
+            if (enemies[i].GetComponent<Rigidbody>())
+                enemies[i].GetComponent<Rigidbody>().AddExplosionForce(explosionForce, transform.position, explosionRange);
+        }
+
+        Destroy(gameObject);
     }
 
-    // Destroy the object immediately without delay
-    Destroy(gameObject);
-}
-
-private void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter(Collision collision)
+    {
+  if (collision.collider.CompareTag("Player"))
 {
-    //Don't count collisions with other bullets
-    if (collision.collider.CompareTag("whatIsBullet")) return;
-
-    //Count up collisions
-    collisions++;
-
-    //Explode if bullet hits an enemy directly and explodeOnTouch is activated
-    if (collision.collider.CompareTag("whatIsEnemy") && explodeOnTouch) Explode();
-
-    // Instantiate the particle effect at the collision point
-    GameObject hitEffect = Instantiate(hitEffectPrefab, collision.contacts[0].point, Quaternion.identity);
-
-    // Explode (and therefore destroy) the bullet immediately
-    Explode();
-
-    // Optionally, destroy the hit effect after some time
-    Destroy(hitEffect, 1f); // destroy after 1 second
+    PlayerHealth playerHealth = collision.collider.GetComponent<PlayerHealth>();
+    if (playerHealth != null)
+    {
+        playerHealth.TakeDamage(10); // Předáváme 10 jako hodnotu poškození
+    }
 }
 
+        if (collision.collider.CompareTag("whatIsBullet")) return;
+
+        collisions++;
+
+        if (collision.collider.CompareTag("whatIsEnemy") && explodeOnTouch) Explode();
+
+        GameObject hitEffect = Instantiate(hitEffectPrefab, collision.contacts[0].point, Quaternion.identity);
+
+        Explode();
+
+        Destroy(hitEffect, 1f); 
+    }
 
     private void Setup()
     {
-        //Create a new Physic material
         physics_mat = new PhysicMaterial();
         physics_mat.bounciness = bounciness;
         physics_mat.frictionCombine = PhysicMaterialCombine.Minimum;
         physics_mat.bounceCombine = PhysicMaterialCombine.Maximum;
-        //Assign material to collider
+
         GetComponent<SphereCollider>().material = physics_mat;
 
-        //Set gravity
         rb.useGravity = useGravity;
     }
 
-    /// Just to visualize the explosion range
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

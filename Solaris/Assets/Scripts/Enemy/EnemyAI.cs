@@ -7,27 +7,25 @@ public class EnemyAI : MonoBehaviour
 
     public Transform player;
     public GameObject gun;
-    public Transform attackPoint; // Nová proměnná AttackPoint
+    public Transform attackPoint;
 
-    //Check for Ground/Obstacles
     public LayerMask whatIsGround, whatIsPlayer;
 
-    //Patroling
     public Vector3 walkPoint;
     public bool walkPointSet;
     public float walkPointRange;
 
-    //Attack Player
     public float timeBetweenAttacks;
     bool alreadyAttacked;
 
-    //States
     public float sightRange, attackRange;
     public bool playerInSightRange, playerInAttackRange;
 
-    //Special
     public Material green, red, yellow;
     public GameObject projectile;
+
+    public GameObject EyeR;
+    public GameObject EyeL;
 
     private void Awake()
     {
@@ -37,10 +35,7 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
-        //Check if Player in sightrange
         playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
-
-        //Check if Player in attackrange
         playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
 
         if (!playerInSightRange && !playerInAttackRange) Patroling();
@@ -52,16 +47,13 @@ public class EnemyAI : MonoBehaviour
     {
         if (!walkPointSet) SearchWalkPoint();
 
-        //Calculate direction and walk to Point
         if (walkPointSet)
         {
             agent.SetDestination(walkPoint);
         }
 
-        //Calculates DistanceToWalkPoint
         Vector3 distanceToWalkPoint = transform.position - walkPoint;
 
-        //Walkpoint reached
         if (distanceToWalkPoint.magnitude < 1f)
             walkPointSet = false;
 
@@ -88,18 +80,15 @@ public class EnemyAI : MonoBehaviour
 
     private void AttackPlayer()
     {
-        //Make sure enemy doesn't move
         agent.SetDestination(transform.position);
 
         transform.LookAt(player);
 
         if (!alreadyAttacked)
         {
-            //Attack
             Rigidbody rb = Instantiate(projectile, attackPoint.position, Quaternion.identity).GetComponent<Rigidbody>();
 
             rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
-            // rb.AddForce(transform.up * 8, ForceMode.Impulse);
 
             alreadyAttacked = true;
             Invoke("ResetAttack", timeBetweenAttacks);
@@ -120,4 +109,17 @@ public class EnemyAI : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, sightRange);
     }
+
+public void Die()
+{
+    Rigidbody eyeRRb = EyeR.AddComponent<Rigidbody>();
+    EyeR.transform.parent = null;
+    eyeRRb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+
+    Rigidbody eyeLRb = EyeL.AddComponent<Rigidbody>();
+    EyeL.transform.parent = null;
+    eyeLRb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+
+    Destroy(gameObject);
+}
 }
