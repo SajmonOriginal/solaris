@@ -6,6 +6,7 @@ TagManager:
   tags:
   - whatIsEnemy
   - whatIsBullet
+  - whatIsWeapon
   layers:
   - Default
   - TransparentFX
