@@ -4,101 +4,127 @@ using UnityEngine;
 
 public class PickUpController : MonoBehaviour
 {
-    public ProjectileGun gunScript;
-    public Rigidbody rb;
-    public BoxCollider coll;
-    public Transform player, gunContainer, fpsCam;
-    public Camera PlayerCam;
-    public Camera GunCam;
-
-    public float pickUpRange, pickUpTime;
-    public float dropForwardForce, dropUpwardForce;
-
     public bool isEquipped;
-    public static bool slotFull;
+    public bool slotFull;
 
-    private int whatIsWeaponLayer;
+    public Transform attackPoint; // Nově přidané
+
+    private Rigidbody rb;
+    private BoxCollider coll;
+    private Quaternion desiredRotation;
+    private Vector3 desiredPosition;
+    private Vector3 posVelocity;
+    private float smoothSpeed = 5f;
 
     private void Start()
     {
+        rb = GetComponent<Rigidbody>();
+        coll = GetComponentInChildren<BoxCollider>();
+
         if (!isEquipped)
         {
-            gunScript.enabled = false;
             rb.isKinematic = false;
             coll.isTrigger = false;
-            transform.SetParent(null); // if the weapon is not equipped, we make sure its parent is null
         }
-        if (isEquipped)
+        else
         {
-            slotFull = true;
             rb.isKinematic = true;
             coll.isTrigger = true;
-            transform.SetParent(gunContainer); // if the weapon is equipped, we make sure its parent is gunContainer
+            ToggleWeaponRenderer(false); // Vypnout vykreslování zbraně, pokud je nesebrána
         }
-
-        whatIsWeaponLayer = LayerMask.NameToLayer("whatIsWeapon");
-        SetCullingMasks(isEquipped);
     }
 
     private void Update()
     {
-        Vector3 distanceToPlayer = player.position - transform.position;
-        if (!isEquipped && distanceToPlayer.magnitude <= pickUpRange && Input.GetKeyDown(KeyCode.E) && !slotFull) PickUp();
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            float distanceToPlayer = Vector3.Distance(transform.position, GameObject.Find("Player").transform.position);
 
-        if (isEquipped && Input.GetKeyDown(KeyCode.Q)) Drop();
+            if (distanceToPlayer < 2f && !slotFull)
+            {
+                PickUp();
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Q) && isEquipped)
+        {
+            Drop();
+        }
     }
 
     private void PickUp()
     {
-        isEquipped = true;
         slotFull = true;
-
-        transform.SetParent(gunContainer);
-        transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.Euler(Vector3.zero);
-        transform.localScale = Vector3.one;
-
         rb.isKinematic = true;
         coll.isTrigger = true;
+        transform.SetParent(GameObject.Find("GunPos").transform);
+        transform.localPosition = Vector3.zero;
+        desiredPosition = Vector3.zero;
+        desiredRotation = Quaternion.Euler(Vector3.zero);
+        transform.localScale = Vector3.one;
 
-        gunScript.enabled = true;
+        ProjectileGun projectileGun = GetComponent<ProjectileGun>();
+        if (projectileGun != null)
+        {
+            projectileGun.SetEquipped(true);
+        }
 
-        SetCullingMasks(true);
+        ToggleWeaponRenderer(true); // Zapnout vykreslování zbraně, pokud je sebrána
+        UpdateCameraCullingMask(false); // Vypnout vykreslování whatIsWeapon ve GunCam
+
+        if (attackPoint != null) // Nově přidané
+        {
+            desiredRotation = Quaternion.LookRotation(attackPoint.position - transform.position);
+        }
     }
 
     private void Drop()
     {
-        isEquipped = false;
         slotFull = false;
-
-        transform.SetParent(null);
-
         rb.isKinematic = false;
         coll.isTrigger = false;
+        transform.SetParent(null);
 
-        rb.velocity = player.GetComponentInParent<Rigidbody>().velocity;
+        ProjectileGun projectileGun = GetComponent<ProjectileGun>();
+        if (projectileGun != null)
+        {
+            projectileGun.SetEquipped(false);
+        }
 
-        rb.AddForce(fpsCam.forward * dropForwardForce, ForceMode.Impulse);
-        rb.AddForce(fpsCam.up * dropUpwardForce, ForceMode.Impulse);
-        float random = Random.Range(-1f, 1f);
-        rb.AddTorque(new Vector3(random, random, random) * 10);
-
-        gunScript.enabled = false;
-
-        SetCullingMasks(false);
+        ToggleWeaponRenderer(false); // Vypnout vykreslování zbraně
+        UpdateCameraCullingMask(true); // Zapnout vykreslování whatIsWeapon ve GunCam
     }
 
-    private void SetCullingMasks(bool isEquipped)
+    private void ToggleWeaponRenderer(bool isEnabled)
+    {
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer.gameObject.layer == LayerMask.NameToLayer("whatIsWeapon"))
+            {
+                renderer.enabled = isEnabled;
+            }
+        }
+    }
+
+    private void UpdateCameraCullingMask(bool enableWhatIsWeapon)
+    {
+        Camera playerCam = GameObject.Find("PlayerCam").GetComponent<Camera>();
+        Camera gunCam = GameObject.Find("GunCam").GetComponent<Camera>();
+
+        if (playerCam != null && gunCam != null)
+        {
+            playerCam.cullingMask = enableWhatIsWeapon ? playerCam.cullingMask | (1 << LayerMask.NameToLayer("whatIsWeapon")) : playerCam.cullingMask & ~(1 << LayerMask.NameToLayer("whatIsWeapon"));
+            gunCam.cullingMask = enableWhatIsWeapon ? gunCam.cullingMask & ~(1 << LayerMask.NameToLayer("whatIsWeapon")) : gunCam.cullingMask | (1 << LayerMask.NameToLayer("whatIsWeapon"));
+        }
+    }
+
+    private void FixedUpdate()
     {
         if (isEquipped)
         {
-            PlayerCam.cullingMask &= ~(1 << whatIsWeaponLayer);
-            GunCam.cullingMask |= (1 << whatIsWeaponLayer);
-        }
-        else
-        {
-            PlayerCam.cullingMask |= (1 << whatIsWeaponLayer);
-            GunCam.cullingMask &= ~(1 << whatIsWeaponLayer);
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, desiredRotation, Time.fixedDeltaTime * smoothSpeed);
+            transform.localPosition = Vector3.SmoothDamp(transform.localPosition, desiredPosition, ref posVelocity, 1f / smoothSpeed);
         }
     }
 }
