@@ -2,14 +2,7 @@
 using UnityEngine;
 using TMPro;
 
-/// Thanks for downloading my projectile gun script! :D
-/// Feel free to use it in any project you like!
-/// 
-/// The code is fully commented but if you still have any questions
-/// don't hesitate to write a yt comment
-/// or use the #coding-problems channel of my discord server
-/// 
-/// Dave
+
 public class ProjectileGun : MonoBehaviour
 {
     //bullet 
@@ -22,6 +15,11 @@ public class ProjectileGun : MonoBehaviour
     public float timeBetweenShooting, spread, reloadTime, timeBetweenShots;
     public int magazineSize, bulletsPerTap;
     public bool allowButtonHold;
+
+    //Audio
+    public AudioSource shootAudioSource;
+    public AudioSource reloadAudioSource;
+
 
     int bulletsLeft, bulletsShot;
 
@@ -117,6 +115,7 @@ public class ProjectileGun : MonoBehaviour
         if (muzzleFlash != null)
             Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
 
+shootAudioSource.Play();
         bulletsLeft--;
         bulletsShot++;
 
@@ -150,6 +149,7 @@ public class ProjectileGun : MonoBehaviour
     {
         //Fill magazine
         bulletsLeft = magazineSize;
+        reloadAudioSource.Play();
         reloading = false;
     }
 }

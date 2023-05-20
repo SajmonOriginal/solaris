@@ -24,6 +24,8 @@ public class EnemyAI : MonoBehaviour
     public Material green, red, yellow;
     public GameObject projectile;
 
+    public AudioSource shootAudioSource;
+
     public GameObject EyeR;
     public GameObject EyeL;
 
@@ -33,15 +35,38 @@ public class EnemyAI : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
     }
 
-    private void Update()
-    {
-        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
-        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
+private void Update()
+{
+    playerInSightRange = false;
+    playerInAttackRange = false;
 
-        if (!playerInSightRange && !playerInAttackRange) Patroling();
-        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
-        if (playerInAttackRange && playerInSightRange) AttackPlayer();
+    RaycastHit hit;
+    Vector3 direction = (player.position - transform.position).normalized;
+
+    // Perform Raycast to check if the player is within sight
+    if (Physics.Raycast(transform.position, direction, out hit, sightRange))
+    {
+        if (hit.collider.gameObject == player.gameObject)
+        {
+            playerInSightRange = true;
+
+            // Check if the player is within attack range
+            if (Physics.Raycast(transform.position, direction, out hit, attackRange))
+            {
+                if (hit.collider.gameObject == player.gameObject)
+                {
+                    playerInAttackRange = true;
+                }
+            }
+        }
     }
+
+    if (!playerInSightRange && !playerInAttackRange) Patroling();
+    if (playerInSightRange && !playerInAttackRange) ChasePlayer();
+    if (playerInAttackRange && playerInSightRange) AttackPlayer();
+}
+
+
 
     private void Patroling()
     {
@@ -87,6 +112,7 @@ public class EnemyAI : MonoBehaviour
         if (!alreadyAttacked)
         {
             Rigidbody rb = Instantiate(projectile, attackPoint.position, Quaternion.identity).GetComponent<Rigidbody>();
+            shootAudioSource.Play();
 
             rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
 

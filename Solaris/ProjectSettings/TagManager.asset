@@ -6,6 +6,7 @@ TagManager:
   tags:
   - whatIsEnemy
   - whatIsBullet
+  - AudioManager
   layers:
   - Default
   - TransparentFX

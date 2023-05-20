@@ -48,6 +48,15 @@ public class PlayerMovement : MonoBehaviour
     private RaycastHit slopeHit;
     private bool exitingSlope;
 
+[Header("Audio")]
+public AudioSource walkingSound;
+public AudioSource jumpingSound;
+public AudioSource wallRunningSound;
+public AudioSource slidingSound;
+public AudioSource landingSound;    // new
+public AudioSource windSound;       // new
+
+
     [Header("References")]
     public Climbing climbingScript;
     public Transform orientation;
@@ -71,7 +80,8 @@ public class PlayerMovement : MonoBehaviour
         vaulting,
         crouching,
         sliding,
-        air
+        air,
+        jump
     }
 
     public bool sliding;
@@ -85,9 +95,7 @@ public class PlayerMovement : MonoBehaviour
     
     public bool restricted;
 
-    // public TextMeshProUGUI text_speed;
-    // public TextMeshProUGUI text_mode;
-
+    private float lastYVelocity;
 
     private void Start()
     {
@@ -97,6 +105,7 @@ public class PlayerMovement : MonoBehaviour
         readyToJump = true;
 
         startYScale = transform.localScale.y;
+
     }
 
     private void Update()
@@ -107,7 +116,7 @@ public class PlayerMovement : MonoBehaviour
         MyInput();
         SpeedControl();
         StateHandler();
-        // TextStuff();
+        HandleSound();
 
 
         // handle drag
@@ -115,6 +124,27 @@ public class PlayerMovement : MonoBehaviour
             rb.drag = groundDrag;
         else
             rb.drag = 0;
+
+            // Check if player landed with a high velocity
+    if (grounded && lastYVelocity < -10f) // Replace -10 with the velocity threshold you want
+    {
+        if (!landingSound.isPlaying)
+            landingSound.Play();
+    }
+
+    // Check if player is moving with sprint speed
+    if (!grounded && rb.velocity.magnitude >= sprintSpeed) // Replace sprintSpeed with the speed threshold you want
+    {
+        if (!windSound.isPlaying)
+            windSound.Play();
+    }
+    else
+    {
+        windSound.Stop();
+    }
+
+    lastYVelocity = rb.velocity.y; // Update lastYVelocity
+    
     }
 
     private void FixedUpdate()
@@ -122,20 +152,83 @@ public class PlayerMovement : MonoBehaviour
         MovePlayer();
     }
 
+private void HandleSound()
+{
+    // Check if the player is moving
+    bool isMoving = rb.velocity.magnitude > 0.1f;
+
+    switch (state)
+    {
+        case MovementState.walking:
+        case MovementState.sprinting:
+            if (isMoving)
+            {
+                if (!walkingSound.isPlaying)
+                    walkingSound.Play();
+            }
+            else
+            {
+                walkingSound.Stop();
+            }
+            break;
+        case MovementState.jump:
+            if (!jumpingSound.isPlaying && isMoving)
+            {
+                jumpingSound.Play();
+            }
+            break;
+        case MovementState.wallrunning:
+            if (isMoving)
+            {
+                if (!wallRunningSound.isPlaying)
+                    wallRunningSound.Play();
+            }
+            else
+            {
+                wallRunningSound.Stop();
+            }
+            break;
+        case MovementState.sliding:
+            if (isMoving)
+            {
+                if (!slidingSound.isPlaying)
+                    slidingSound.Play();
+            }
+            else
+            {
+                slidingSound.Stop();
+            }
+            break;
+        default:
+            // Stop all sounds
+            StopAllSounds();
+            break;
+    }
+}
+
+private void StopAllSounds()
+{
+    walkingSound.Stop();
+    jumpingSound.Stop();
+    wallRunningSound.Stop();
+    slidingSound.Stop();
+}
+
     private void MyInput()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
         // when to jump
-        if (Input.GetKey(jumpKey) && readyToJump && grounded)
-        {
-            readyToJump = false;
+if (Input.GetKey(jumpKey) && readyToJump && grounded)
+{
+    state = MovementState.jump; // Přidáno
+    readyToJump = false;
 
-            Jump();
+    Jump();
 
-            Invoke(nameof(ResetJump), jumpCooldown);
-        }
+    Invoke(nameof(ResetJump), jumpCooldown);
+}
 
         // start crouch
         if (Input.GetKeyDown(crouchKey) && horizontalInput == 0 && verticalInput == 0)
@@ -378,19 +471,6 @@ public class PlayerMovement : MonoBehaviour
     {
         return Vector3.ProjectOnPlane(direction, slopeHit.normal).normalized;
     }
-
-    // private void TextStuff()
-    // {
-    //     Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-
-    //     if (OnSlope())
-    //         text_speed.SetText("Speed: " + Round(rb.velocity.magnitude, 1) + " / " + Round(moveSpeed, 1));
-
-    //     else
-    //         text_speed.SetText("Speed: " + Round(flatVel.magnitude, 1) + " / " + Round(moveSpeed, 1));
-
-    //     text_mode.SetText(state.ToString());
-    // }
 
     public static float Round(float value, int digits)
     {
