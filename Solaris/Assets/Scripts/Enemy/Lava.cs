@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class RedCubeDamage : MonoBehaviour
+public class Lava : MonoBehaviour
 {
     private void OnCollisionEnter(Collision collision)
     {

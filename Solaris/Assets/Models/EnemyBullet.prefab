@@ -274,6 +274,7 @@ MonoBehaviour:
   maxCollisions: 1
   maxLifetime: 6
   explodeOnTouch: 1
+  isPlayerBullet: 0
 --- !u!135 &-7412861778211816910
 SphereCollider:
   m_ObjectHideFlags: 0

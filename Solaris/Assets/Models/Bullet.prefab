@@ -163,7 +163,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rb: {fileID: -7430343100012900027}
   explosion: {fileID: 0}
-  hitEffectPrefab: {fileID: 2339867355232806087, guid: 33fe50e5889077242b73ae7ef744f754, type: 3}
+  hitEffectPrefab: {fileID: 0}
   whatIsEnemy:
     serializedVersion: 2
     m_Bits: 16384
@@ -175,6 +175,7 @@ MonoBehaviour:
   maxCollisions: 0
   maxLifetime: 6
   explodeOnTouch: 0
+  isPlayerBullet: 1
 --- !u!96 &-8223134199291558132
 TrailRenderer:
   serializedVersion: 2

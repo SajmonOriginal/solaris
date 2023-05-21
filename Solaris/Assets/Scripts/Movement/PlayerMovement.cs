@@ -72,7 +72,6 @@ public AudioSource windSound;       // new
     public enum MovementState
     {
         freeze,
-        unlimited,
         walking,
         sprinting,
         wallrunning,
@@ -259,12 +258,12 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
             desiredMoveSpeed = 0f;
         }
 
-        // Mode - Unlimited
-        else if (unlimited)
-        {
-            state = MovementState.unlimited;
-            desiredMoveSpeed = 999f;
-        }
+        // // Mode - Unlimited
+        // else if (unlimited)
+        // {
+        //     state = MovementState.unlimited;
+        //     desiredMoveSpeed = 999f;
+        // }
 
         // Mode - Vaulting
         else if (vaulting)

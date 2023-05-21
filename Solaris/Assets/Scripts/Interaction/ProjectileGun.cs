@@ -1,7 +1,5 @@
-
 using UnityEngine;
 using TMPro;
-
 
 public class ProjectileGun : MonoBehaviour
 {
@@ -19,7 +17,6 @@ public class ProjectileGun : MonoBehaviour
     //Audio
     public AudioSource shootAudioSource;
     public AudioSource reloadAudioSource;
-
 
     int bulletsLeft, bulletsShot;
 
@@ -56,8 +53,14 @@ public class ProjectileGun : MonoBehaviour
         if (ammunitionDisplay != null)
             ammunitionDisplay.SetText(bulletsLeft / bulletsPerTap + " / " + magazineSize / bulletsPerTap);
     }
+
     private void MyInput()
     {
+        if (Time.timeScale == 0)
+        {
+            return;
+        }
+
         //Check if allowed to hold down button and take corresponding input
         if (allowButtonHold) shooting = Input.GetKey(KeyCode.Mouse0);
         else shooting = Input.GetKeyDown(KeyCode.Mouse0);
@@ -81,41 +84,25 @@ public class ProjectileGun : MonoBehaviour
     {
         readyToShoot = false;
 
-        //Find the exact hit position using a raycast
-        Ray ray = fpsCam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0)); //Just a ray through the middle of your current view
-        RaycastHit hit;
-
-        //check if ray hits something
-        Vector3 targetPoint;
-        if (Physics.Raycast(ray, out hit))
-            targetPoint = hit.point;
-        else
-            targetPoint = ray.GetPoint(75); //Just a point far away from the player
-
-        //Calculate direction from attackPoint to targetPoint
-        Vector3 directionWithoutSpread = targetPoint - attackPoint.position;
-
-        //Calculate spread
-        float x = Random.Range(-spread, spread);
-        float y = Random.Range(-spread, spread);
-
-        //Calculate new direction with spread
-        Vector3 directionWithSpread = directionWithoutSpread + new Vector3(x, y, 0); //Just add spread to last direction
+        //Find the center of the screen
+        Vector3 screenCenter = new Vector3(0.5f, 0.5f, 0);
+        Ray ray = fpsCam.ViewportPointToRay(screenCenter);
 
         //Instantiate bullet/projectile
-        GameObject currentBullet = Instantiate(bullet, attackPoint.position, Quaternion.LookRotation(directionWithSpread.normalized)); //store instantiated bullet in currentBullet
-        //Rotate bullet to shoot direction
-        currentBullet.transform.forward = directionWithSpread.normalized;
-
+        GameObject currentBullet = Instantiate(bullet, attackPoint.position, Quaternion.identity);
+        
+        //Calculate direction from attackPoint to screenCenter
+        Vector3 direction = ray.direction;
+        
         //Add forces to bullet
-        currentBullet.GetComponent<Rigidbody>().AddForce(directionWithSpread.normalized * shootForce, ForceMode.Impulse);
+        currentBullet.GetComponent<Rigidbody>().AddForce(direction * shootForce, ForceMode.Impulse);
         currentBullet.GetComponent<Rigidbody>().AddForce(fpsCam.transform.up * upwardForce, ForceMode.Impulse);
 
         //Instantiate muzzle flash, if you have one
         if (muzzleFlash != null)
             Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
 
-shootAudioSource.Play();
+        shootAudioSource.Play();
         bulletsLeft--;
         bulletsShot++;
 
@@ -126,13 +113,14 @@ shootAudioSource.Play();
             allowInvoke = false;
 
             //Add recoil to player (should only be called once)
-            playerRb.AddForce(-directionWithSpread.normalized * recoilForce, ForceMode.Impulse);
+            playerRb.AddForce(-direction.normalized * recoilForce, ForceMode.Impulse);
         }
 
         //if more than one bulletsPerTap make sure to repeat shoot function
         if (bulletsShot < bulletsPerTap && bulletsLeft > 0)
             Invoke("Shoot", timeBetweenShots);
     }
+
     private void ResetShot()
     {
         //Allow shooting and invoking again
@@ -145,6 +133,7 @@ shootAudioSource.Play();
         reloading = true;
         Invoke("ReloadFinished", reloadTime); //Invoke ReloadFinished function with your reloadTime as delay
     }
+
     private void ReloadFinished()
     {
         //Fill magazine

@@ -3,7 +3,7 @@ using UnityEngine.UI; // Přidejte tuto řádku na začátku skriptu
 
 public class PlayerHealth : MonoBehaviour
 {
-    public RetryButton retryButton;
+    public DeathMenu deathMenu;
     public GameObject crosshair; // Přidejte tuto řádku. Ve vašem Unity Editoru přetáhněte objekt Crosshair do tohoto pole v inspektor
 
     public void TakeDamage(int damage)
@@ -14,7 +14,7 @@ public class PlayerHealth : MonoBehaviour
     public void Die()
     {
         // zobrazit tlačítko Retry
-        retryButton.ShowHide(true);
+        deathMenu.ShowHide(true);
 
         // zmrazit hru
         Time.timeScale = 0;

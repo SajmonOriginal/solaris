@@ -4,10 +4,9 @@ public class CustomBullet : MonoBehaviour
 {
     public Rigidbody rb;
     public GameObject explosion;
-    public GameObject hitEffectPrefab;
     public LayerMask whatIsEnemy;
 
-    [Range(0f,1f)]
+    [Range(0f, 1f)]
     public float bounciness;
     public bool useGravity;
 
@@ -18,6 +17,8 @@ public class CustomBullet : MonoBehaviour
     public int maxCollisions;
     public float maxLifetime;
     public bool explodeOnTouch = true;
+
+    public bool isPlayerBullet;
 
     int collisions;
     PhysicMaterial physics_mat;
@@ -53,14 +54,16 @@ public class CustomBullet : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-  if (collision.collider.CompareTag("Player"))
-{
-    PlayerHealth playerHealth = collision.collider.GetComponent<PlayerHealth>();
-    if (playerHealth != null)
-    {
-        playerHealth.TakeDamage(10); // Předáváme 10 jako hodnotu poškození
-    }
-}
+        if (isPlayerBullet && collision.collider.CompareTag("Player"))
+        {
+            return;
+        }
+
+        if (!isPlayerBullet && collision.collider.CompareTag("Player"))
+        {
+            collision.collider.GetComponent<PlayerHealth>()?.TakeDamage(explosionDamage);
+            return;
+        }
 
         if (collision.collider.CompareTag("whatIsBullet")) return;
 
@@ -68,11 +71,9 @@ public class CustomBullet : MonoBehaviour
 
         if (collision.collider.CompareTag("whatIsEnemy") && explodeOnTouch) Explode();
 
-        GameObject hitEffect = Instantiate(hitEffectPrefab, collision.contacts[0].point, Quaternion.identity);
 
         Explode();
 
-        Destroy(hitEffect, 1f); 
     }
 
     private void Setup()
@@ -85,6 +86,15 @@ public class CustomBullet : MonoBehaviour
         GetComponent<SphereCollider>().material = physics_mat;
 
         rb.useGravity = useGravity;
+    }
+
+    private void FixedUpdate()
+    {
+        if (rb.velocity.magnitude > 0.1f)
+        {
+            Vector3 lookDirection = rb.velocity.normalized;
+            transform.rotation = Quaternion.LookRotation(lookDirection);
+        }
     }
 
     private void OnDrawGizmosSelected()

@@ -5,7 +5,7 @@ public class DragRigidbody : MonoBehaviour
 {
     public float force = 600;
     public float damping = 6;
-    public float distance = 15;
+    public float distance = 4;
     public LineRenderer lr;
     public Transform lineRenderLocation;
 
@@ -18,21 +18,22 @@ public class DragRigidbody : MonoBehaviour
         lr.positionCount = 0;
     }
 
-       void OnMouseDown()
+    void OnMouseDown()
     {
         HandleInputBegin(Input.mousePosition);
-        isDragging = true;
     }
 
     void OnMouseUp()
     {
         HandleInputEnd(Input.mousePosition);
-        isDragging = false;
     }
 
     void OnMouseDrag()
     {
-        HandleInput(Input.mousePosition);
+        if (isDragging)
+        {
+            HandleInput(Input.mousePosition);
+        }
     }
 
     public void HandleInputBegin(Vector3 screenPosition)
@@ -48,7 +49,6 @@ public class DragRigidbody : MonoBehaviour
                 isDragging = true;
             }
         }
-
         lr.positionCount = 2;
     }
 
@@ -57,14 +57,17 @@ public class DragRigidbody : MonoBehaviour
         if (jointTrans == null) return;
         var worldPos = Camera.main.ScreenToWorldPoint(screenPosition);
         jointTrans.position = CameraPlane.ScreenToWorldPlanePoint(Camera.main, dragDepth, screenPosition);
-
         DrawRope();
     }
 
     public void HandleInputEnd(Vector3 screenPosition)
     {
         DestroyRope();
-        Destroy(jointTrans.gameObject);
+        if(jointTrans != null)
+        {
+            Destroy(jointTrans.gameObject);
+            jointTrans = null;
+        }
         isDragging = false;
     }
 

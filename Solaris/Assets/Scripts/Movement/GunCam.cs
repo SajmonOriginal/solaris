@@ -21,15 +21,14 @@ public class GunCam : MonoBehaviour
         // Check if the weapon is equipped before moving it
         if (pickUpController != null && pickUpController.isEquipped)
         {
-            float mouseX = Input.GetAxis("Mouse X");
-            float mouseY = Input.GetAxis("Mouse Y");
+            float mouseX = Input.GetAxis("Mouse X") * weaponSwayAmount;
+            float mouseY = Input.GetAxis("Mouse Y") * weaponSwayAmount;
 
-            Vector3 targetPosition = new Vector3(
-                _initialPosition.x - mouseX * weaponSwayAmount,
-                _initialPosition.y - mouseY * weaponSwayAmount,
-                _initialPosition.z
-            );
+            // Convert mouse movement to world space
+            Vector3 worldMouseMovement = new Vector3(-mouseX, -mouseY, 0f);
 
+            // Apply weapon sway
+            Vector3 targetPosition = _initialPosition + worldMouseMovement;
             _gunTransform.localPosition = Vector3.Lerp(_gunTransform.localPosition, targetPosition, Time.deltaTime * 4f);
         }
     }

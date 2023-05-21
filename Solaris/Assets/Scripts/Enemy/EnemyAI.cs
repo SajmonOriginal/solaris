@@ -3,149 +3,206 @@ using UnityEngine.AI;
 
 public class EnemyAI : MonoBehaviour
 {
-    public NavMeshAgent agent;
+    public NavMeshAgent agent; // Reference na komponentu NavMeshAgent
 
-    public Transform player;
-    public GameObject gun;
-    public Transform attackPoint;
+    public Transform player; // Reference na transformaci hráče
 
-    public LayerMask whatIsGround, whatIsPlayer;
+    public LayerMask
 
-    public Vector3 walkPoint;
-    public bool walkPointSet;
-    public float walkPointRange;
+            whatIsGround,
+            whatIsPlayer,
+            whatIsWall; // Definice vrstev pro raycasty
 
-    public float timeBetweenAttacks;
-    bool alreadyAttacked;
+    public float walkPointRange; // Dosah náhodných bodů pro procházení
 
-    public float sightRange, attackRange;
-    public bool playerInSightRange, playerInAttackRange;
+    private Vector3 walkPoint; // Aktuální náhodný bod
 
-    public Material green, red, yellow;
-    public GameObject projectile;
+    private bool walkPointSet; // Příznak, zda je nastaven náhodný bod pro procházení
 
-    public AudioSource shootAudioSource;
+    public float timeBetweenAttacks; // Čas mezi útoky
 
-    public GameObject EyeR;
-    public GameObject EyeL;
+    private bool alreadyAttacked; // Příznak, zda již byl proveden útok
+
+    public float
+
+            sightRange,
+            attackRange; // Dosahy pro viditelnost hráče a útok
+
+    private bool
+
+            playerInSightRange,
+            playerInAttackRange; // Příznaky, zda je hráč ve viditelnosti a útočném dosahu
+
+    public GameObject projectile; // Prefab projektilu
+
+    public Transform attackPoint; // Pozice pro vypuštění projektilu
+
+    public AudioSource shootAudioSource; // Zvukový zdroj pro střelbu
+
+    public Material
+
+            green,
+            yellow,
+            red; // Materiály pro různé stavy nepřítele
+
+    private MeshRenderer meshRenderer; // Renderer pro zobrazení meshe
+
+    public GameObject EyeR; // Reference na pravé oko
+
+    public GameObject EyeL; // Reference na levé oko
 
     private void Awake()
     {
-        player = GameObject.Find("PlayerObj").transform;
-        agent = GetComponent<NavMeshAgent>();
+        player = GameObject.Find("PlayerObj").transform; // Nalezení transformace hráče
+        agent = GetComponent<NavMeshAgent>(); // Získání komponenty NavMeshAgent
+        meshRenderer = GetComponent<MeshRenderer>(); // Získání komponenty MeshRenderer
     }
 
-private void Update()
-{
-    playerInSightRange = false;
-    playerInAttackRange = false;
-
-    RaycastHit hit;
-    Vector3 direction = (player.position - transform.position).normalized;
-
-    // Perform Raycast to check if the player is within sight
-    if (Physics.Raycast(transform.position, direction, out hit, sightRange))
+    private void Update()
     {
-        if (hit.collider.gameObject == player.gameObject)
-        {
-            playerInSightRange = true;
+        // Kontrola dosahu viditelnosti a útoku hráče
+        playerInSightRange =
+            Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
+        playerInAttackRange =
+            Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
 
-            // Check if the player is within attack range
-            if (Physics.Raycast(transform.position, direction, out hit, attackRange))
+        if (playerInSightRange)
+        {
+            // Kontrola, zda je přímý pohled na hráče blokován stěnou
+            if (
+                Physics
+                    .Linecast(transform.position, player.position, whatIsWall)
+            )
             {
-                if (hit.collider.gameObject == player.gameObject)
-                {
-                    playerInAttackRange = true;
-                }
+                playerInSightRange = false;
             }
         }
+
+        if (playerInAttackRange)
+        {
+            // Kontrola, zda je přímý pohled na hráče blokován stěnou
+            if (
+                Physics
+                    .Linecast(transform.position, player.position, whatIsWall)
+            )
+            {
+                playerInAttackRange = false;
+            }
+        }
+
+        // Rozhodování o akci na základě dosahu hráče
+        if (!playerInAttackRange && !playerInSightRange)
+        {
+            Patroling();
+        }
+        if (playerInSightRange && !playerInAttackRange)
+        {
+            ChasePlayer();
+        }
+        if (playerInAttackRange && playerInSightRange)
+        {
+            AttackPlayer();
+        }
     }
-
-    if (!playerInSightRange && !playerInAttackRange) Patroling();
-    if (playerInSightRange && !playerInAttackRange) ChasePlayer();
-    if (playerInAttackRange && playerInSightRange) AttackPlayer();
-}
-
-
 
     private void Patroling()
     {
-        if (!walkPointSet) SearchWalkPoint();
-
-        if (walkPointSet)
+        if (!walkPointSet)
         {
-            agent.SetDestination(walkPoint);
+            SearchWalkPoint(); // Hledání náhodného bodu pro procházení
+        }
+        else
+        {
+            agent.SetDestination (walkPoint); // Nastavení cílové pozice pro procházení
+
+            if (agent.remainingDistance <= agent.stoppingDistance)
+            {
+                walkPointSet = false; // Resetování příznaku náhodného bodu, pokud byl dosažen
+            }
         }
 
-        Vector3 distanceToWalkPoint = transform.position - walkPoint;
-
-        if (distanceToWalkPoint.magnitude < 1f)
-            walkPointSet = false;
-
-        GetComponent<MeshRenderer>().material = green;
+        meshRenderer.material = green; // Nastavení zeleného materiálu
     }
 
     private void SearchWalkPoint()
     {
-        float randomZ = Random.Range(-walkPointRange, walkPointRange);
-        float randomX = Random.Range(-walkPointRange, walkPointRange);
+        Vector3 randomPoint =
+            Random.insideUnitSphere * walkPointRange + transform.position; // Náhodný bod v určeném dosahu okolo nepřítele
+        NavMeshHit hit;
 
-        walkPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z + randomZ);
-
-        if (Physics.Raycast(walkPoint, -transform.up, 2, whatIsGround))
-            walkPointSet = true;
+        if (
+            NavMesh
+                .SamplePosition(randomPoint,
+                out hit,
+                walkPointRange,
+                NavMesh.AllAreas)
+        )
+        {
+            walkPoint = hit.position; // Nastavení náhodného bodu
+            walkPointSet = true; // Nastavení příznaku náhodného bodu
+        }
     }
 
     private void ChasePlayer()
     {
-        agent.SetDestination(player.position);
-
-        GetComponent<MeshRenderer>().material = yellow;
+        agent.SetDestination(player.position); // Nastavení cílové pozice pro pronásledování hráče
+        meshRenderer.material = yellow; // Nastavení žlutého materiálu
     }
 
     private void AttackPlayer()
     {
-        agent.SetDestination(transform.position);
-
-        transform.LookAt(player);
+        agent.SetDestination(transform.position); // Zastavení pohybu
+        transform.LookAt (player); // Otočení směrem k hráči
 
         if (!alreadyAttacked)
         {
-            Rigidbody rb = Instantiate(projectile, attackPoint.position, Quaternion.identity).GetComponent<Rigidbody>();
-            shootAudioSource.Play();
+            GameObject bullet =
+                Instantiate(projectile,
+                attackPoint.position,
+                Quaternion.identity); // Vytvoření projektilu
+            Rigidbody rb = bullet.GetComponent<Rigidbody>();
+            rb.AddForce(transform.forward * 32f, ForceMode.Impulse); // Přidání síly projektilu
 
-            rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
+            shootAudioSource.Play(); // Přehrání zvuku střelby
 
-            alreadyAttacked = true;
-            Invoke("ResetAttack", timeBetweenAttacks);
+            CustomBullet customBullet = bullet.GetComponent<CustomBullet>(); // Získání skriptu CustomBullet z projektilu
+            if (customBullet != null)
+            {
+                customBullet.isPlayerBullet = false; // Nastavení proměnné isPlayerBullet na false
+            }
+
+            alreadyAttacked = true; // Nastavení příznaku útoku na true
+            Invoke(nameof(ResetAttack), timeBetweenAttacks); // Spuštění funkce ResetAttack po časovém prodlevě
         }
 
-        GetComponent<MeshRenderer>().material = red;
+        meshRenderer.material = red; // Nastavení červeného materiálu
     }
 
     private void ResetAttack()
     {
-        alreadyAttacked = false;
+        alreadyAttacked = false; // Resetování příznaku útoku
     }
 
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        Gizmos.DrawWireSphere(transform.position, attackRange); // Vykreslení kruhu pro útočný dosah
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, sightRange);
+        Gizmos.DrawWireSphere(transform.position, sightRange); // Vykreslení kruhu pro dosah viditelnosti
     }
 
-public void Die()
-{
-    Rigidbody eyeRRb = EyeR.AddComponent<Rigidbody>();
-    EyeR.transform.parent = null;
-    eyeRRb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+    public void Die()
+    {
+        Rigidbody eyeRRb = EyeR.AddComponent<Rigidbody>(); // Přidání komponenty Rigidbody na pravé oko
+        EyeR.transform.parent = null; // Odpojení pravého oka od rodiče
+        eyeRRb.collisionDetectionMode =
+            CollisionDetectionMode.ContinuousDynamic; // Nastavení detekce kolizí pro pravé oko
 
-    Rigidbody eyeLRb = EyeL.AddComponent<Rigidbody>();
-    EyeL.transform.parent = null;
-    eyeLRb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        Rigidbody eyeLRb = EyeL.AddComponent<Rigidbody>(); // Přidání komponenty Rigidbody na levé oko
+        EyeL.transform.parent = null; // Odpojení levého oka od rodiče
+        eyeLRb.collisionDetectionMode =
+            CollisionDetectionMode.ContinuousDynamic; // Nastavení detekce kolizí pro levé oko
 
-    Destroy(gameObject);
-}
+        Destroy (gameObject); // Zničení objektu nepřítele
+    }
 }
