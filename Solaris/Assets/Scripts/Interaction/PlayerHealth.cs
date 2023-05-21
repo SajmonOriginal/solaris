@@ -1,29 +1,32 @@
 using UnityEngine;
-using UnityEngine.UI; // Přidejte tuto řádku na začátku skriptu
+using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
 {
-    public DeathMenu deathMenu;
-    public GameObject crosshair; // Přidejte tuto řádku. Ve vašem Unity Editoru přetáhněte objekt Crosshair do tohoto pole v inspektor
+    public DeathMenu deathMenu; // Reference na DeathMenu skript pro zobrazení tlačítka Retry
 
+    public GameObject crosshair; // Reference na objekt Crosshair pro skrytí
+
+    // Funkce volaná při zranění hráče
     public void TakeDamage(int damage)
     {
-        Die();
+        Die(); // Zavolá funkci pro smrt hráče
     }
 
+    // Funkce pro smrt hráče
     public void Die()
     {
-        // zobrazit tlačítko Retry
+        // Zobrazení tlačítka Retry
         deathMenu.ShowHide(true);
 
-        // zmrazit hru
+        // Zmrazení hry
         Time.timeScale = 0;
 
-        // zobrazit kurzor
+        // Zobrazení kurzoru
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // skryjeme Crosshair
+        // Skrytí Crosshairu
         crosshair.SetActive(false);
     }
 }

@@ -5,6 +5,7 @@ using TMPro;
 
 public class PlayerMovement : MonoBehaviour
 {
+    // Sekce pro nastavení rychlosti pohybu hráče
     [Header("Movement")]
     private float moveSpeed;
     private float desiredMoveSpeed;
@@ -22,41 +23,47 @@ public class PlayerMovement : MonoBehaviour
 
     public float groundDrag;
 
+    // Sekce pro nastavení skákání hráče
     [Header("Jumping")]
     public float jumpForce;
     public float jumpCooldown;
     public float airMultiplier;
     bool readyToJump;
 
+    // Sekce pro nastavení dřepu hráče
     [Header("Crouching")]
     public float crouchSpeed;
     public float crouchYScale;
     private float startYScale;
 
+    // Sekce pro nastavení klávesových zkratek
     [Header("Keybinds")]
     public KeyCode jumpKey = KeyCode.Space;
     public KeyCode sprintKey = KeyCode.LeftShift;
     public KeyCode crouchKey = KeyCode.LeftControl;
 
+    // Sekce pro nastavení detekce země
     [Header("Ground Check")]
     public float playerHeight;
     public LayerMask whatIsGround;
     public bool grounded;
 
+    // Sekce pro nastavení manipulace se svahem
     [Header("Slope Handling")]
     public float maxSlopeAngle;
     private RaycastHit slopeHit;
     private bool exitingSlope;
 
-[Header("Audio")]
-public AudioSource walkingSound;
-public AudioSource jumpingSound;
-public AudioSource wallRunningSound;
-public AudioSource slidingSound;
-public AudioSource landingSound;    // new
-public AudioSource windSound;       // new
+    // Sekce pro nastavení zvuků
+    [Header("Audio")]
+    public AudioSource walkingSound;
+    public AudioSource jumpingSound;
+    public AudioSource wallRunningSound;
+    public AudioSource slidingSound;
+    public AudioSource landingSound;
+    public AudioSource windSound;
 
-
+    // Sekce pro referenci na ostatní objekty a skripty
     [Header("References")]
     public Climbing climbingScript;
     public Transform orientation;
@@ -68,10 +75,12 @@ public AudioSource windSound;       // new
 
     Rigidbody rb;
 
+    // Vymezuje stavy pohybu hráče
     public MovementState state;
     public enum MovementState
     {
         freeze,
+        unlimited,
         walking,
         sprinting,
         wallrunning,
@@ -83,12 +92,14 @@ public AudioSource windSound;       // new
         jump
     }
 
+    // Proměnné pro různé typy pohybu
     public bool sliding;
     public bool crouching;
     public bool wallrunning;
     public bool climbing;
     public bool vaulting;
 
+    // Proměnné pro speciální režimy pohybu
     public bool freeze;
     public bool unlimited;
     
@@ -96,6 +107,7 @@ public AudioSource windSound;       // new
 
     private float lastYVelocity;
 
+    // Inicializace na začátku hry
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -107,9 +119,10 @@ public AudioSource windSound;       // new
 
     }
 
+    // Aktualizace pohybu hráče, zvuků a jiných faktorů každý snímek
     private void Update()
     {
-        // ground check
+        // Detekce země
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
 
         MyInput();
@@ -117,119 +130,121 @@ public AudioSource windSound;       // new
         StateHandler();
         HandleSound();
 
-
-        // handle drag
+        // Změna odporu vzduchu na zemi a ve vzduchu
         if (grounded)
             rb.drag = groundDrag;
         else
             rb.drag = 0;
 
-            // Check if player landed with a high velocity
-    if (grounded && lastYVelocity < -10f) // Replace -10 with the velocity threshold you want
-    {
-        if (!landingSound.isPlaying)
-            landingSound.Play();
+        // Přehrání zvuku po dopadu na zem s vysokou rychlostí
+        if (grounded && lastYVelocity < -10f)
+        {
+            if (!landingSound.isPlaying)
+                landingSound.Play();
+        }
+
+        // Přehrání zvuku větru při pohybu hráče rychlostí sprintu ve vzduchu
+        if (!grounded && rb.velocity.magnitude >= sprintSpeed)
+        {
+            if (!windSound.isPlaying)
+                windSound.Play();
+        }
+        else
+        {
+            windSound.Stop();
+        }
+
+        lastYVelocity = rb.velocity.y;
     }
 
-    // Check if player is moving with sprint speed
-    if (!grounded && rb.velocity.magnitude >= sprintSpeed) // Replace sprintSpeed with the speed threshold you want
-    {
-        if (!windSound.isPlaying)
-            windSound.Play();
-    }
-    else
-    {
-        windSound.Stop();
-    }
-
-    lastYVelocity = rb.velocity.y; // Update lastYVelocity
-    
-    }
-
+    // Aktualizace pohybu hráče každý fyzikální snímek
     private void FixedUpdate()
     {
         MovePlayer();
     }
 
-private void HandleSound()
-{
-    // Check if the player is moving
-    bool isMoving = rb.velocity.magnitude > 0.1f;
-
-    switch (state)
+    // Přehrání zvuků pohybu hráče podle aktuálního stavu
+    private void HandleSound()
     {
-        case MovementState.walking:
-        case MovementState.sprinting:
-            if (isMoving)
-            {
-                if (!walkingSound.isPlaying)
-                    walkingSound.Play();
-            }
-            else
-            {
-                walkingSound.Stop();
-            }
-            break;
-        case MovementState.jump:
-            if (!jumpingSound.isPlaying && isMoving)
-            {
-                jumpingSound.Play();
-            }
-            break;
-        case MovementState.wallrunning:
-            if (isMoving)
-            {
-                if (!wallRunningSound.isPlaying)
-                    wallRunningSound.Play();
-            }
-            else
-            {
-                wallRunningSound.Stop();
-            }
-            break;
-        case MovementState.sliding:
-            if (isMoving)
-            {
-                if (!slidingSound.isPlaying)
-                    slidingSound.Play();
-            }
-            else
-            {
-                slidingSound.Stop();
-            }
-            break;
-        default:
-            // Stop all sounds
-            StopAllSounds();
-            break;
+        // Kontrola, zda se hráč pohybuje
+        bool isMoving = rb.velocity.magnitude > 0.1f;
+
+        switch (state)
+        {
+            case MovementState.walking:
+            case MovementState.sprinting:
+                if (isMoving)
+                {
+                    if (!walkingSound.isPlaying)
+                        walkingSound.Play();
+                }
+                else
+                {
+                    walkingSound.Stop();
+                }
+                break;
+            case MovementState.jump:
+                if (!jumpingSound.isPlaying && isMoving)
+                {
+                    jumpingSound.Play();
+                }
+                break;
+            case MovementState.wallrunning:
+                if (isMoving)
+                {
+                    if (!wallRunningSound.isPlaying)
+                        wallRunningSound.Play();
+                }
+                else
+                {
+                    wallRunningSound.Stop();
+                }
+                break;
+            case MovementState.sliding:
+                if (isMoving)
+                {
+                    if (!slidingSound.isPlaying)
+                        slidingSound.Play();
+                }
+                else
+                {
+                    slidingSound.Stop();
+                }
+                break;
+            default:
+                // Zastavení všech zvuků
+                StopAllSounds();
+                break;
+        }
     }
-}
 
-private void StopAllSounds()
-{
-    walkingSound.Stop();
-    jumpingSound.Stop();
-    wallRunningSound.Stop();
-    slidingSound.Stop();
-}
+    // Zastavení všech zvuků
+    private void StopAllSounds()
+    {
+        walkingSound.Stop();
+        jumpingSound.Stop();
+        wallRunningSound.Stop();
+        slidingSound.Stop();
+    }
 
+    // Zpracování vstupu hráče
     private void MyInput()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        // when to jump
-if (Input.GetKey(jumpKey) && readyToJump && grounded)
-{
-    state = MovementState.jump; // Přidáno
-    readyToJump = false;
+        // Skákání
+        if (Input.GetKey(jumpKey) && readyToJump && grounded)
+        {
+            state = MovementState.jump;
+            readyToJump = false;
 
-    Jump();
+            Jump();
 
-    Invoke(nameof(ResetJump), jumpCooldown);
-}
+            Invoke(nameof(ResetJump), jumpCooldown);
+        }
 
-        // start crouch
+        // Začátek dřepu
         if (Input.GetKeyDown(crouchKey) && horizontalInput == 0 && verticalInput == 0)
         {
             transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
@@ -238,7 +253,7 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
             crouching = true;
         }
 
-        // stop crouch
+        // Konec dřepu
         if (Input.GetKeyUp(crouchKey))
         {
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
@@ -248,9 +263,10 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
     }
 
     bool keepMomentum;
+    // Zpracování aktuálního stavu pohybu hráče
     private void StateHandler()
     {
-        // Mode - Freeze
+        // Režim - Zamrznutí
         if (freeze)
         {
             state = MovementState.freeze;
@@ -258,72 +274,73 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
             desiredMoveSpeed = 0f;
         }
 
-        // // Mode - Unlimited
-        // else if (unlimited)
-        // {
-        //     state = MovementState.unlimited;
-        //     desiredMoveSpeed = 999f;
-        // }
+        // Režim - Neomezený pohyb
+        else if (unlimited)
+        {
+            state = MovementState.unlimited;
+            desiredMoveSpeed = 999f;
+        }
 
-        // Mode - Vaulting
+        // Režim - Skok přes překážku
         else if (vaulting)
         {
             state = MovementState.vaulting;
             desiredMoveSpeed = vaultSpeed;
         }
 
-        // Mode - Climbing
+        // Režim - Lezení
         else if (climbing)
         {
             state = MovementState.climbing;
             desiredMoveSpeed = climbSpeed;
         }
 
-        // Mode - Wallrunning
+        // Režim - Běh po zdi
         else if (wallrunning)
         {
             state = MovementState.wallrunning;
             desiredMoveSpeed = wallrunSpeed;
         }
 
-        // Mode - Sliding
+        // Režim - Klouzání
         else if (sliding)
         {
             state = MovementState.sliding;
 
-            // increase speed by one every second
+            // Zvyšování rychlosti klouzání každou sekundu
             if (OnSlope() && rb.velocity.y < 0.1f)
             {
                 desiredMoveSpeed = slideSpeed;
                 keepMomentum = true;
             }
-
             else
+            {
                 desiredMoveSpeed = sprintSpeed;
+            }
         }
 
-        // Mode - Crouching
+        // Režim - Dřep
         else if (crouching)
         {
             state = MovementState.crouching;
             desiredMoveSpeed = crouchSpeed;
         }
 
-        // Mode - Sprinting
+        // Režim - Sprint
         else if (grounded && Input.GetKey(sprintKey))
         {
             state = MovementState.sprinting;
             desiredMoveSpeed = sprintSpeed;
         }
 
-        // Mode - Walking
+        // Režim - Chůze
         else if (grounded)
         {
             state = MovementState.walking;
             desiredMoveSpeed = walkSpeed;
         }
 
-        // Mode - Air
+        // Režim - Vzduch
         else
         {
             state = MovementState.air;
@@ -349,13 +366,13 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
 
         lastDesiredMoveSpeed = desiredMoveSpeed;
 
-        // deactivate keepMomentum
+        // Deaktivace udržování momentu
         if (Mathf.Abs(desiredMoveSpeed - moveSpeed) < 0.1f) keepMomentum = false;
     }
 
+    // Plynulé přechodné zvyšování rychlosti pohybu
     private IEnumerator SmoothlyLerpMoveSpeed()
     {
-        // smoothly lerp movementSpeed to desired value
         float time = 0;
         float difference = Mathf.Abs(desiredMoveSpeed - moveSpeed);
         float startValue = moveSpeed;
@@ -380,22 +397,24 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
         moveSpeed = desiredMoveSpeed;
     }
 
-        public Vector3 GetMoveDirection()
+    // Získání směru pohybu hráče
+    public Vector3 GetMoveDirection()
     {
         Vector3 moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
         moveDirection.Normalize();
         return moveDirection;
     }
 
+    // Pohyb hráče
     private void MovePlayer()
     {
         if (climbingScript.exitingWall) return;
         if (restricted) return;
 
-        // calculate movement direction
+        // Výpočet směru pohybu
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        // on slope
+        // Na svahu
         if (OnSlope() && !exitingSlope)
         {
             rb.AddForce(GetSlopeMoveDirection(moveDirection) * moveSpeed * 20f, ForceMode.Force);
@@ -404,33 +423,33 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
                 rb.AddForce(Vector3.down * 80f, ForceMode.Force);
         }
 
-        // on ground
+        // Na zemi
         else if (grounded)
             rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
 
-        // in air
+        // Ve vzduchu
         else if (!grounded)
             rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
 
-        // turn gravity off while on slope
+        // Vypnutí gravitace při běhu po zdi
         if(!wallrunning) rb.useGravity = !OnSlope();
     }
 
+    // Omezení rychlosti pohybu hráče
     private void SpeedControl()
     {
-        // limiting speed on slope
+        // Omezení rychlosti na svahu
         if (OnSlope() && !exitingSlope)
         {
             if (rb.velocity.magnitude > moveSpeed)
                 rb.velocity = rb.velocity.normalized * moveSpeed;
         }
 
-        // limiting speed on ground or in air
+        // Omezení rychlosti na zemi nebo ve vzduchu
         else
         {
             Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
-            // limit velocity if needed
             if (flatVel.magnitude > moveSpeed)
             {
                 Vector3 limitedVel = flatVel.normalized * moveSpeed;
@@ -439,15 +458,19 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
         }
     }
 
+    // Skok hráče
     private void Jump()
     {
         exitingSlope = true;
 
-        // reset y velocity
+        // Resetování rychlosti ve vertikálním směru
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
+        // Přidání síly ve směru nahoru
         rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
     }
+
+    // Resetování možnosti skoku
     private void ResetJump()
     {
         readyToJump = true;
@@ -455,6 +478,7 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
         exitingSlope = false;
     }
 
+    // Kontrola, zda se hráč nachází na svahu
     public bool OnSlope()
     {
         if (Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f + 0.3f))
@@ -466,11 +490,13 @@ if (Input.GetKey(jumpKey) && readyToJump && grounded)
         return false;
     }
 
+    // Získání směru pohybu na svahu
     public Vector3 GetSlopeMoveDirection(Vector3 direction)
     {
         return Vector3.ProjectOnPlane(direction, slopeHit.normal).normalized;
     }
 
+    // Zaokrouhlení čísla na zadaný počet desetinných míst
     public static float Round(float value, int digits)
     {
         float mult = Mathf.Pow(10.0f, (float)digits);

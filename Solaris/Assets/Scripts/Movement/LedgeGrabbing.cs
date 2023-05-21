@@ -5,44 +5,44 @@ using UnityEngine;
 public class LedgeGrabbing : MonoBehaviour
 {
     [Header("References")]
-    public PlayerMovement pm;
-    public Transform orientation;
-    public Transform cam;
-    public Rigidbody rb;
+    public PlayerMovement pm; // Odkaz na PlayerMovement
+    public Transform orientation; // Odkaz na transformaci orientace
+    public Transform cam; // Odkaz na transformaci kamery
+    public Rigidbody rb; // Odkaz na komponentu Rigidbody
 
     [Header("Ledge Grabbing")]
-    public float moveToLedgeSpeed;
-    public float maxLedgeGrabDistance;
+    public float moveToLedgeSpeed; // Rychlost pohybu k okraji
+    public float maxLedgeGrabDistance; // Maximální vzdálenost pro chytání okraje
 
-    public float minTimeOnLedge;
-    private float timeOnLedge;
+    public float minTimeOnLedge; // Minimální doba na okraji
+    private float timeOnLedge; // Aktuální doba na okraji
 
-    public bool holding;
+    public bool holding; // Příznak, zda je hráč na okraji
 
     [Header("Ledge Jumping")]
-    public KeyCode jumpKey = KeyCode.Space;
-    public float ledgeJumpForwardForce;
-    public float ledgeJumpUpwardForce;
+    public KeyCode jumpKey = KeyCode.Space; // Klávesa pro skok
+    public float ledgeJumpForwardForce; // Síla skoku do předu z okraje
+    public float ledgeJumpUpwardForce; // Síla skoku nahoru z okraje
 
     [Header("Ledge Detection")]
-    public float ledgeDetectionLength;
-    public float ledgeSphereCastRadius;
-    public LayerMask whatIsLedge;
+    public float ledgeDetectionLength; // Délka detekce okraje
+    public float ledgeSphereCastRadius; // Poloměr pro SphereCast detekci okraje
+    public LayerMask whatIsLedge; // Vrstva určující, co je považováno za okraj
 
-    private Transform lastLedge;
-    private Transform currLedge;
+    private Transform lastLedge; // Poslední detekovaný okraj
+    private Transform currLedge; // Aktuálně držený okraj
 
-    private RaycastHit ledgeHit;
+    private RaycastHit ledgeHit; // Informace o zásahu okraje
 
     [Header("Exiting")]
-    public bool exitingLedge;
-    public float exitLedgeTime;
-    private float exitLedgeTimer;
+    public bool exitingLedge; // Příznak, zda hráč opouští okraj
+    public float exitLedgeTime; // Doba trvání opouštění okraje
+    private float exitLedgeTimer; // Aktuální doba opouštění okraje
 
     private void Update()
     {
-        LedgeDetection();
-        SubStateMachine();
+        LedgeDetection(); // Detekce okraje
+        SubStateMachine(); // Podstavový stav
     }
 
     private void SubStateMachine()
@@ -51,7 +51,7 @@ public class LedgeGrabbing : MonoBehaviour
         float verticalInput = Input.GetAxisRaw("Vertical");
         bool anyInputKeyPressed = horizontalInput != 0 || verticalInput != 0;
 
-        // SubState 1 - Holding onto ledge
+        // Podstav 1 - Držení okraje
         if (holding)
         {
             FreezeRigidbodyOnLedge();
@@ -63,7 +63,7 @@ public class LedgeGrabbing : MonoBehaviour
             if (Input.GetKeyDown(jumpKey)) LedgeJump();
         }
 
-        // Substate 2 - Exiting Ledge
+        // Podstav 2 - Opouštění okraje
         else if (exitingLedge)
         {
             if (exitLedgeTimer > 0) exitLedgeTimer -= Time.deltaTime;
@@ -119,21 +119,21 @@ public class LedgeGrabbing : MonoBehaviour
         Vector3 directionToLedge = currLedge.position - transform.position;
         float distanceToLedge = Vector3.Distance(transform.position, currLedge.position);
 
-        // Move player towards ledge
-        if(distanceToLedge > 1f)
+        // Pohyb hráče směrem k okraji
+        if (distanceToLedge > 1f)
         {
-            if(rb.velocity.magnitude < moveToLedgeSpeed)
+            if (rb.velocity.magnitude < moveToLedgeSpeed)
                 rb.AddForce(directionToLedge.normalized * moveToLedgeSpeed * 1000f * Time.deltaTime);
         }
 
-        // Hold onto ledge
+        // Držení se okraje
         else
         {
             if (!pm.freeze) pm.freeze = true;
             if (pm.unlimited) pm.unlimited = false;
         }
 
-        // Exiting if something goes wrong
+        // Opouštění okraje, pokud se něco pokazí
         if (distanceToLedge > maxLedgeGrabDistance) ExitLedgeHold();
     }
 

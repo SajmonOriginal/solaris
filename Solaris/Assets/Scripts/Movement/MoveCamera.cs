@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class MoveCamera : MonoBehaviour
 {
-    public Transform cameraPosition;
+    public Transform cameraPosition; // Cílová pozice kamery
 
     private void Update()
     {
-        transform.position = cameraPosition.position;
+        transform.position = cameraPosition.position; // Aktualizace pozice kamery na pozici cílového bodu
     }
 }

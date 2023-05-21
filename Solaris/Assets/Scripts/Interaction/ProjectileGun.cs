@@ -3,44 +3,43 @@ using TMPro;
 
 public class ProjectileGun : MonoBehaviour
 {
-    //bullet 
+    // Střela
     public GameObject bullet;
 
-    //bullet force
+    // Síla střely
     public float shootForce, upwardForce;
 
-    //Gun stats
+    // Statistiky zbraně
     public float timeBetweenShooting, spread, reloadTime, timeBetweenShots;
     public int magazineSize, bulletsPerTap;
     public bool allowButtonHold;
 
-    //Audio
+    // Zvuky
     public AudioSource shootAudioSource;
     public AudioSource reloadAudioSource;
 
     int bulletsLeft, bulletsShot;
 
-    //Recoil
+    // Recoil
     public Rigidbody playerRb;
     public float recoilForce;
 
-    //bools
+    // Boole
     bool shooting, readyToShoot, reloading;
 
-    //Reference
+    // Reference
     public Camera fpsCam;
     public Transform attackPoint;
 
-    //Graphics
+    // Grafika
     public GameObject muzzleFlash;
     public TextMeshProUGUI ammunitionDisplay;
-
-    //bug fixing :D
+    
     public bool allowInvoke = true;
 
     private void Awake()
     {
-        //make sure magazine is full
+        // Zajištění plného zásobníku
         bulletsLeft = magazineSize;
         readyToShoot = true;
     }
@@ -49,7 +48,7 @@ public class ProjectileGun : MonoBehaviour
     {
         MyInput();
 
-        //Set ammo display, if it exists :D
+        // Nastavení zobrazení munice, pokud existuje :D
         if (ammunitionDisplay != null)
             ammunitionDisplay.SetText(bulletsLeft / bulletsPerTap + " / " + magazineSize / bulletsPerTap);
     }
@@ -61,19 +60,19 @@ public class ProjectileGun : MonoBehaviour
             return;
         }
 
-        //Check if allowed to hold down button and take corresponding input
+        // Kontrola, zda je povolené podržení tlačítka a příslušný vstup
         if (allowButtonHold) shooting = Input.GetKey(KeyCode.Mouse0);
         else shooting = Input.GetKeyDown(KeyCode.Mouse0);
 
-        //Reloading 
+        // Nabíjení
         if (Input.GetKeyDown(KeyCode.R) && bulletsLeft < magazineSize && !reloading) Reload();
-        //Reload automatically when trying to shoot without ammo
+        // Automatické nabíjení při pokusu o střelbu bez munice
         if (readyToShoot && shooting && !reloading && bulletsLeft <= 0) Reload();
 
-        //Shooting
+        // Střelba
         if (!DragRigidbody.isDragging && readyToShoot && shooting && !reloading && bulletsLeft > 0)
         {
-            //Set bullets shot to 0
+            // Nastavení počtu vystřelených střel na 0
             bulletsShot = 0;
 
             Shoot();
@@ -84,21 +83,21 @@ public class ProjectileGun : MonoBehaviour
     {
         readyToShoot = false;
 
-        //Find the center of the screen
+        // Nalezení středu obrazovky
         Vector3 screenCenter = new Vector3(0.5f, 0.5f, 0);
         Ray ray = fpsCam.ViewportPointToRay(screenCenter);
 
-        //Instantiate bullet/projectile
+        // Vytvoření instance střely
         GameObject currentBullet = Instantiate(bullet, attackPoint.position, Quaternion.identity);
-        
-        //Calculate direction from attackPoint to screenCenter
+
+        // Výpočet směru od attackPoint ke středu obrazovky
         Vector3 direction = ray.direction;
-        
-        //Add forces to bullet
+
+        // Přidání síly k střele
         currentBullet.GetComponent<Rigidbody>().AddForce(direction * shootForce, ForceMode.Impulse);
         currentBullet.GetComponent<Rigidbody>().AddForce(fpsCam.transform.up * upwardForce, ForceMode.Impulse);
 
-        //Instantiate muzzle flash, if you have one
+        // Vytvoření efektu záblesku hlavně, pokud existuje
         if (muzzleFlash != null)
             Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
 
@@ -106,24 +105,24 @@ public class ProjectileGun : MonoBehaviour
         bulletsLeft--;
         bulletsShot++;
 
-        //Invoke resetShot function (if not already invoked), with your timeBetweenShooting
+        // Zavolání funkce ResetShot (pokud ještě nebyla zavolána), s časem timeBetweenShooting
         if (allowInvoke)
         {
             Invoke("ResetShot", timeBetweenShooting);
             allowInvoke = false;
 
-            //Add recoil to player (should only be called once)
+            // Přidání zpětného rázu na hráče (mělo by být zavoláno pouze jednou)
             playerRb.AddForce(-direction.normalized * recoilForce, ForceMode.Impulse);
         }
 
-        //if more than one bulletsPerTap make sure to repeat shoot function
+        // Pokud je více než jedna střela na jedno stisknutí tlačítka, zopakujte funkci Shoot
         if (bulletsShot < bulletsPerTap && bulletsLeft > 0)
             Invoke("Shoot", timeBetweenShots);
     }
 
     private void ResetShot()
     {
-        //Allow shooting and invoking again
+        // Povolení střelby a znovu zavolání Invoke
         readyToShoot = true;
         allowInvoke = true;
     }
@@ -131,12 +130,12 @@ public class ProjectileGun : MonoBehaviour
     private void Reload()
     {
         reloading = true;
-        Invoke("ReloadFinished", reloadTime); //Invoke ReloadFinished function with your reloadTime as delay
+        Invoke("ReloadFinished", reloadTime); // Zavolání funkce ReloadFinished po uplynutí doby reloadTime
     }
 
     private void ReloadFinished()
     {
-        //Fill magazine
+        // Naplnění zásobníku
         bulletsLeft = magazineSize;
         reloadAudioSource.Play();
         reloading = false;

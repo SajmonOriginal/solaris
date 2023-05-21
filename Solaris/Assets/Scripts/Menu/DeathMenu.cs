@@ -3,42 +3,46 @@ using UnityEngine.SceneManagement;
 
 public class DeathMenu : MonoBehaviour
 {
-    public GameObject youDiedText;
-    public GameObject mainMenuButton; // Drag the MainMenu button UI here
-    public GameObject retryButton; // Drag the Retry button UI here
-    public GameObject crosshair; // Drag your Crosshair object here
+    public GameObject youDiedText; // Objekt textu, který zobrazuje "You Died"
+
+    public GameObject mainMenuButton; // Tlačítko pro hlavní menu
+
+    public GameObject retryButton; // Tlačítko pro opakování
+
+    public GameObject crosshair; // Objekt zaměřovače (crosshair)
 
     public AudioSource[] playerAudioSources; // Array of player's Audio Sources
 
     private void Start()
     {
-        // Hide the Retry and MainMenu buttons at the start of the game
+        // Na začátku hry skryjeme tlačítka Retry a MainMenu
         ShowHide(false);
     }
 
+    // Funkce pro zobrazení/skrytí tlačítek Retry a MainMenu
     public void ShowHide(bool show)
     {
-        youDiedText.SetActive(show);
-        retryButton.SetActive(show);
-        mainMenuButton.SetActive(show); // This line will hide/show the MainMenu button with the Retry button
-        crosshair.SetActive(!show); // this line will hide/show the crosshair inversely
+        youDiedText.SetActive (show);
+        retryButton.SetActive (show);
+        mainMenuButton.SetActive (show); // Tato řádka skryje/zobrazí tlačítko MainMenu spolu s tlačítkem Retry
+        crosshair.SetActive(!show); // Tato řádka skryje/zobrazí zaměřovač (crosshair) opačně
     }
 
     public void OnRetryButtonPressed()
     {
-        // Restart the scene
+        // Restartujeme scénu
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
 
-        // Reset the timescale
+        // Obnovíme časovou škálu
         Time.timeScale = 1;
 
-        // reset slotFull
+        // Resetujeme proměnnou slotFull
         PickUpController.slotFull = false;
 
-        // Hide the Retry and MainMenu buttons
+        // Skryjeme tlačítka Retry a MainMenu
         ShowHide(false);
 
-        // Enable player's Audio Sources
+        // Povolíme Audio Sources hráče
         foreach (AudioSource audioSource in playerAudioSources)
         {
             audioSource.enabled = true;
@@ -47,13 +51,13 @@ public class DeathMenu : MonoBehaviour
 
     public void OnMainMenuButtonPressed()
     {
-        // Load the main menu
+        // Načteme hlavní menu
         SceneManager.LoadScene("Main Menu");
 
-        // Reset the timescale
+        // Obnovíme časovou škálu
         Time.timeScale = 1;
 
-        // Enable player's Audio Sources
+        // Povolíme Audio Sources hráče
         foreach (AudioSource audioSource in playerAudioSources)
         {
             audioSource.enabled = true;

@@ -3,33 +3,35 @@ using UnityEngine.SceneManagement;
 
 public class WinMenu : MonoBehaviour
 {
-    public GameObject youWinText;
-    public GameObject nextButton; // Drag the Next button UI here
-    public GameObject menuButton; // Drag the Menu button UI here
-    public GameObject crosshair; // Drag your Crosshair object here
+    public GameObject youWinText; // Textový objekt UI zobrazující "Vyhrál jsi"
+    public GameObject nextButton; // Tlačítko UI pro přechod na další úroveň
+    public GameObject menuButton; // Tlačítko UI pro návrat do hlavního menu
+    public GameObject crosshair; // Objekt představující zaměřovač
 
-    public AudioSource[] playerAudioSources; // Array of player's Audio Sources
+    public AudioSource[] playerAudioSources; // Pole Audio Source hráče
 
     private void Start()
     {
-        // Hide the You Win text, Next and Menu buttons at the start of the game
+        // Na začátku hry skryjeme text "Vyhrál jsi", tlačítko "Další" a tlačítko "Menu"
         ShowHide(false);
     }
 
+    // Metoda pro zobrazení/skrytí prvků UI
     public void ShowHide(bool show)
     {
         youWinText.SetActive(show);
         nextButton.SetActive(show);
         menuButton.SetActive(show);
-        crosshair.SetActive(!show); // this line will hide/show the crosshair inversely
+        crosshair.SetActive(!show); // Tato řádka skrývá/zobrazuje zaměřovač opačně
     }
 
+    // Metoda volaná po stisknutí tlačítka "Další"
     public void OnNextButtonPressed()
     {
-        // Get the current scene
+        // Získáme název aktuální úrovně
         string currentSceneName = SceneManager.GetActiveScene().name;
 
-        // Load the next scene based on the current scene
+        // Načteme další úroveň na základě aktuální úrovně
         if (currentSceneName == "Level1")
         {
             SceneManager.LoadScene("Level2");
@@ -39,36 +41,35 @@ public class WinMenu : MonoBehaviour
             SceneManager.LoadScene("Level1");
         }
 
-            // // Try to extract the level number from the scene name
-    // if (currentSceneName.StartsWith("Level") && int.TryParse(currentSceneName.Substring(5), out int currentLevel))
-    // {
-    //     // Load the next level
-    //     string nextLevelName = "Level" + (currentLevel + 1);
-    //     SceneManager.LoadScene(nextLevelName);
-    // }
-
-        // Reset the timescale
+        // Resetujeme časovou škálu
         Time.timeScale = 1;
 
-        // Enable player's Audio Sources
+        // Povolíme Audio Source hráče
         foreach (AudioSource audioSource in playerAudioSources)
         {
             audioSource.enabled = true;
         }
+
+        // Resetujeme stav vybavení zbraní hráče
+        PickUpController.slotFull = false;
     }
 
+    // Metoda volaná po stisknutí tlačítka "Menu"
     public void OnMenuButtonPressed()
     {
-        // Load the main menu
+        // Načteme hlavní menu
         SceneManager.LoadScene("Main Menu");
 
-        // Reset the timescale
+        // Resetujeme časovou škálu
         Time.timeScale = 1;
 
-        // Enable player's Audio Sources
+        // Povolíme Audio Source hráče
         foreach (AudioSource audioSource in playerAudioSources)
         {
             audioSource.enabled = true;
         }
+
+        // Resetujeme stav vybavení zbraní hráče
+        PickUpController.slotFull = false;
     }
 }

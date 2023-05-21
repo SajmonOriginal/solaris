@@ -5,7 +5,7 @@ using UnityEngine;
 public class GunCam : MonoBehaviour
 {
     public float weaponSwayAmount = 0.02f;
-    public PickUpController pickUpController; // Add a reference to the PickUpController
+    public PickUpController pickUpController; // Odkaz na PickUpController
 
     private Transform _gunTransform;
     private Vector3 _initialPosition;
@@ -18,16 +18,16 @@ public class GunCam : MonoBehaviour
 
     void Update()
     {
-        // Check if the weapon is equipped before moving it
+        // Zkontroluj, zda je zbraň vybavena, než ji pohybuješ
         if (pickUpController != null && pickUpController.isEquipped)
         {
             float mouseX = Input.GetAxis("Mouse X") * weaponSwayAmount;
             float mouseY = Input.GetAxis("Mouse Y") * weaponSwayAmount;
 
-            // Convert mouse movement to world space
+            // Převeď pohyb myši do světového prostoru
             Vector3 worldMouseMovement = new Vector3(-mouseX, -mouseY, 0f);
 
-            // Apply weapon sway
+            // Aplikuj pohyb zbraně
             Vector3 targetPosition = _initialPosition + worldMouseMovement;
             _gunTransform.localPosition = Vector3.Lerp(_gunTransform.localPosition, targetPosition, Time.deltaTime * 4f);
         }

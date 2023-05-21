@@ -2,35 +2,33 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public class Sliding : MonoBehaviour
 {
     [Header("References")]
-    public Transform orientation;
-    public Transform playerObj;
-    private Rigidbody rb;
-    private PlayerMovement pm;
+    public Transform orientation; // Odkaz na transformaci orientace
+    public Transform playerObj; // Odkaz na transformaci hráče
+    private Rigidbody rb; // Odkaz na komponentu Rigidbody
+    private PlayerMovement pm; // Odkaz na skript PlayerMovement
 
     [Header("Sliding")]
-    public float maxSlideTime;
-    public float slideForce;
-    private float slideTimer;
+    public float maxSlideTime; // Maximální doba skluzu
+    public float slideForce; // Síla skluzu
+    private float slideTimer; // Aktuální doba skluzu
 
-    public float slideYScale;
-    private float startYScale;
+    public float slideYScale; // Výška hráče během skluzu
+    private float startYScale; // Počáteční výška hráče
 
     [Header("Input")]
-    public KeyCode slideKey = KeyCode.LeftControl;
+    public KeyCode slideKey = KeyCode.LeftControl; // Klávesa pro skluz
     private float horizontalInput;
     private float verticalInput;
 
-
     private void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        pm = GetComponent<PlayerMovement>();
+        rb = GetComponent<Rigidbody>(); // Získání komponenty Rigidbody
+        pm = GetComponent<PlayerMovement>(); // Získání skriptu PlayerMovement
 
-        startYScale = playerObj.localScale.y;
+        startYScale = playerObj.localScale.y; // Uložení počáteční výšky hráče
     }
 
     private void Update()
@@ -39,56 +37,55 @@ public class Sliding : MonoBehaviour
         verticalInput = Input.GetAxisRaw("Vertical");
 
         if (Input.GetKeyDown(slideKey) && (horizontalInput != 0 || verticalInput != 0))
-            StartSlide();
+            StartSlide(); // Zahájení skluzu
 
         if (Input.GetKeyUp(slideKey) && pm.sliding)
-            StopSlide();
+            StopSlide(); // Zastavení skluzu
     }
 
     private void FixedUpdate()
     {
         if (pm.sliding)
-            SlidingMovement();
+            SlidingMovement(); // Pohyb při skluzu
     }
 
     private void StartSlide()
     {
-        if (pm.wallrunning) return;
+        if (pm.wallrunning) return; // Pokud se hráč nachází na stěně, nepovol skluz
 
-        pm.sliding = true;
+        pm.sliding = true; // Nastavení příznaku skluzu
 
-        playerObj.localScale = new Vector3(playerObj.localScale.x, slideYScale, playerObj.localScale.z);
-        rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
+        playerObj.localScale = new Vector3(playerObj.localScale.x, slideYScale, playerObj.localScale.z); // Změna výšky hráče
+        rb.AddForce(Vector3.down * 5f, ForceMode.Impulse); // Aplikace síly dolů
 
-        slideTimer = maxSlideTime;
+        slideTimer = maxSlideTime; // Nastavení doby skluzu
     }
 
     private void SlidingMovement()
     {
         Vector3 inputDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        // sliding normal
-        if(!pm.OnSlope() || rb.velocity.y > -0.1f)
+        // Skluz po normále
+        if (!pm.OnSlope() || rb.velocity.y > -0.1f)
         {
-            rb.AddForce(inputDirection.normalized * slideForce, ForceMode.Force);
+            rb.AddForce(inputDirection.normalized * slideForce, ForceMode.Force); // Aplikace skluzové síly
 
-            slideTimer -= Time.deltaTime;
+            slideTimer -= Time.deltaTime; // Snížení času skluzu
         }
-
-        // sliding down a slope
+        // Skluz dolů po svahu
         else
         {
-            rb.AddForce(pm.GetSlopeMoveDirection(inputDirection) * slideForce, ForceMode.Force);
+            rb.AddForce(pm.GetSlopeMoveDirection(inputDirection) * slideForce, ForceMode.Force); // Aplikace skluzové síly po svahu
         }
 
         if (slideTimer <= 0)
-            StopSlide();
+            StopSlide(); // Zastavení skluzu, pokud vypršel čas skluzu
     }
 
     private void StopSlide()
     {
-        pm.sliding = false;
+        pm.sliding = false; // Vypnutí příznaku skluzu
 
-        playerObj.localScale = new Vector3(playerObj.localScale.x, startYScale, playerObj.localScale.z);
+        playerObj.localScale = new Vector3(playerObj.localScale.x, startYScale, playerObj.localScale.z); // Vrácení výšky hráče na původní hodnotu
     }
 }

@@ -17,11 +17,11 @@ public class EnemyAI : MonoBehaviour
 
     private Vector3 walkPoint; // Aktuální náhodný bod
 
-    private bool walkPointSet; // Příznak, zda je nastaven náhodný bod pro procházení
+    private bool walkPointSet; // Stav, zda je nastaven náhodný bod pro procházení
 
     public float timeBetweenAttacks; // Čas mezi útoky
 
-    private bool alreadyAttacked; // Příznak, zda již byl proveden útok
+    private bool alreadyAttacked; // Stav, zda již byl proveden útok
 
     public float
 
@@ -31,7 +31,7 @@ public class EnemyAI : MonoBehaviour
     private bool
 
             playerInSightRange,
-            playerInAttackRange; // Příznaky, zda je hráč ve viditelnosti a útočném dosahu
+            playerInAttackRange; // Stav, zda je hráč ve viditelnosti a útočném dosahu
 
     public GameObject projectile; // Prefab projektilu
 
@@ -117,7 +117,7 @@ public class EnemyAI : MonoBehaviour
 
             if (agent.remainingDistance <= agent.stoppingDistance)
             {
-                walkPointSet = false; // Resetování příznaku náhodného bodu, pokud byl dosažen
+                walkPointSet = false; // Resetování stavu náhodného bodu, pokud byl dosažen
             }
         }
 
@@ -139,7 +139,7 @@ public class EnemyAI : MonoBehaviour
         )
         {
             walkPoint = hit.position; // Nastavení náhodného bodu
-            walkPointSet = true; // Nastavení příznaku náhodného bodu
+            walkPointSet = true; // Nastavení stavu náhodného bodu
         }
     }
 
@@ -171,7 +171,7 @@ public class EnemyAI : MonoBehaviour
                 customBullet.isPlayerBullet = false; // Nastavení proměnné isPlayerBullet na false
             }
 
-            alreadyAttacked = true; // Nastavení příznaku útoku na true
+            alreadyAttacked = true; // Nastavení stavu útoku na true
             Invoke(nameof(ResetAttack), timeBetweenAttacks); // Spuštění funkce ResetAttack po časovém prodlevě
         }
 
@@ -180,7 +180,7 @@ public class EnemyAI : MonoBehaviour
 
     private void ResetAttack()
     {
-        alreadyAttacked = false; // Resetování příznaku útoku
+        alreadyAttacked = false; // Resetování stavu útoku
     }
 
     private void OnDrawGizmosSelected()

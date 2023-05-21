@@ -3879,8 +3879,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41d99970fc1a24239a4c209998abc9f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponSwayAmount: 0.8
-  pickUpController: {fileID: 0}
+  weaponSwayAmount: 0.08
+  pickUpController: {fileID: 498011086}
 --- !u!20 &236451701
 Camera:
   m_ObjectHideFlags: 0

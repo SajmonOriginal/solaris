@@ -3,17 +3,25 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    public string gameSceneName = "Scene";  // přidáno
+    public string gameSceneName = "Scene";  // Název scény, která se načte po kliknutí na tlačítko Play
 
-    public void PlayGame()  // Veřejná funkce bez parametrů
+    // Funkce, která se volá po kliknutí na tlačítko Play
+    public void PlayGame()
     {
+        // Nastavíme hodnotu slotFull na false
         PickUpController.slotFull = false;
-        SceneManager.LoadScene(gameSceneName); // název scény je nyní ovládán proměnnou
+
+        // Načteme scénu s názvem gameSceneName
+        SceneManager.LoadScene(gameSceneName);
     }
 
-    public void QuitGame()  // Veřejná funkce bez parametrů
+    // Funkce, která se volá po kliknutí na tlačítko Quit
+    public void QuitGame()
     {
+        // Vypíšeme zprávu "Quit!" do konzole
         Debug.Log("Quit!");
+
+        // Ukončíme aplikaci
         Application.Quit();
     }
 }
